@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}{{ city }} — Soft Landing{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+
+  <!-- Header -->
+  <div class="report-header p-4 rounded-3 mb-4 shadow-sm d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1 small">
+          <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Home</a></li>
+          {% if data.country %}
+          <li class="breadcrumb-item">
+            <span class="me-1">{{ data.country | flag }}</span>{{ data.country }}
+          </li>
+          {% endif %}
+          <li class="breadcrumb-item active">{{ city }}</li>
+        </ol>
+      </nav>
+      <h2 class="fw-bold mb-1">
+        <i class="bi bi-geo-alt-fill text-danger me-2"></i>{{ city }}{% if data.country %}<span class="text-muted fs-5 fw-normal">, {{ data.country }}</span>{% endif %}
+      </h2>
+      {% if from_cache %}
+        <span class="badge bg-secondary"><i class="bi bi-database me-1"></i>Cached report</span>
+      {% else %}
+        <span class="badge bg-success"><i class="bi bi-lightning-fill me-1"></i>Fresh data</span>
+      {% endif %}
+      <span class="badge bg-dark ms-1">{{ data.currency }}</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="{{ url_for('report', city=city_slug) }}?refresh=1" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+      </a>
+      <a href="{{ url_for('compare') }}?city={{ city_slug }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-bar-chart-line me-1"></i>Compare
+      </a>
+      <a href="{{ url_for('history') }}" class="btn btn-outline-dark btn-sm">
+        <i class="bi bi-clock-history me-1"></i>History
+      </a>
+    </div>
+  </div>
+
+
+  <div class="row g-4">
+    <!-- Cost categories -->
+    <div class="col-12">
+
+      {% if data.categories %}
+      {% set cat_meta = {
+        'Restaurants':          ('bi-egg-fried',        'danger'),
+        'Markets':              ('bi-basket2',           'success'),
+        'Transportation':       ('bi-bus-front',         'primary'),
+        'Utilities (Monthly)':  ('bi-lightning-charge',  'warning'),
+        'Sports And Leisure':   ('bi-bicycle',           'info'),
+        'Childcare':            ('bi-people',            'pink'),
+        'Clothing And Shoes':   ('bi-bag',               'secondary'),
+        'Rent Per Month':       ('bi-house',             'dark'),
+        'Buy Apartment Price':  ('bi-building',          'dark'),
+        'Salaries And Financing':('bi-cash-stack',       'success'),
+      } %}
+
+      <h5 class="fw-bold mb-3">
+        <i class="bi bi-table me-2 text-primary"></i>Cost Breakdown
+      </h5>
+
+      {% for cat, items in data.categories.items() %}
+      {% set meta = cat_meta.get(cat, ('bi-tag', 'secondary')) %}
+      <div class="card border-0 shadow-sm mb-3">
+        <div class="card-header bg-{{ meta[1] }}-subtle border-0 py-2 px-3">
+          <span class="fw-semibold text-{{ meta[1] }}">
+            <i class="bi {{ meta[0] }} me-2"></i>{{ cat }}
+          </span>
+        </div>
+        <div class="table-responsive">
+          <table class="table table-hover table-sm align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th class="ps-3">Item</th>
+                <th class="text-end">Avg ({{ data.currency }})</th>
+                <th class="text-end pe-3 text-muted small">Range</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item in items %}
+              <tr class="market-row" data-name="{{ item.name }}" data-price="{{ item.price }}">
+                <td class="small ps-3">{{ item.name }}</td>
+                <td class="text-end fw-semibold">{{ '{:,.2f}'.format(item.price) }}</td>
+                <td class="text-end pe-3 text-muted small">
+                  {% if item.range_low and item.range_high %}
+                    {{ '{:,.2f}'.format(item.range_low) }} – {{ '{:,.2f}'.format(item.range_high) }}
+                  {% else %}—{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+      {% endif %}
+
+    </div>
+  </div>
+
+  <!-- Videos section -->
+  {% if videos %}
+  {% set has_videos = namespace(found=false) %}
+  {% for query, vlist in videos.items() %}
+    {% if vlist %}{% set has_videos.found = true %}{% endif %}
+  {% endfor %}
+
+  {% if has_videos.found %}
+  <div class="card border-0 shadow-sm mb-5">
+    <div class="card-header bg-danger-subtle border-0">
+      <h5 class="fw-bold mb-0">
+        <i class="bi bi-youtube me-2 text-danger"></i>Video Guides for {{ city }}
+      </h5>
+    </div>
+    <div class="card-body">
+      {% for query, vlist in videos.items() %}
+        {% if vlist %}
+        <h6 class="text-muted small fw-semibold text-uppercase mb-3 mt-3">{{ query }}</h6>
+        <div class="row g-3 mb-2">
+          {% for v in vlist %}
+          <div class="col-md-4">
+            <div class="card h-100 border shadow-sm">
+              <div class="ratio ratio-16x9">
+                <iframe src="{{ v.embed_url }}" title="{{ v.title }}"
+                        allowfullscreen loading="lazy"
+                        class="rounded-top"></iframe>
+              </div>
+              <div class="card-body p-2">
+                <p class="small fw-semibold mb-0 text-truncate" title="{{ v.title }}">{{ v.title }}</p>
+                <p class="text-muted mb-0" style="font-size:.7rem">{{ v.channel }}</p>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
+  {% else %}
+  <div class="alert alert-light border mb-5 small">
+    <i class="bi bi-info-circle me-2"></i>
+    Add a <code>YOUTUBE_API_KEY</code> to your <code>.env</code> file to enable video guides.
+  </div>
+  {% endif %}
+
+</div>
+
+{% endblock %}

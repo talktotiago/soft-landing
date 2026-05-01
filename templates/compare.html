@@ -1,0 +1,329 @@
+{% extends "base.html" %}
+{% block title %}Compare Cities — Soft Landing{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">
+      <i class="bi bi-bar-chart-line me-2 text-primary"></i>City Comparison
+    </h3>
+    <a href="{{ url_for('history') }}" class="btn btn-outline-secondary btn-sm">
+      <i class="bi bi-arrow-left me-1"></i>Back to History
+    </a>
+  </div>
+
+  <!-- City selector -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold mb-3">Select cities to compare</h6>
+      <form method="GET" action="{{ url_for('compare') }}" id="compareForm">
+        <div class="row g-2 align-items-end">
+          <div class="col">
+            <div class="d-flex flex-wrap gap-2">
+              {% for r in all_reports %}
+              <div class="form-check form-check-inline">
+                <input class="form-check-input" type="checkbox" name="city"
+                       value="{{ r.city_name.replace(' ', '-') }}" id="c-{{ r.id }}"
+                       {% if r.city_name.replace(' ', '-') in selected %}checked{% endif %}>
+                <label class="form-check-label small fw-semibold" for="c-{{ r.id }}">
+                  {{ r.city_name }}
+                </label>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+          <div class="col-auto">
+            <button class="btn btn-primary btn-sm" type="submit">
+              <i class="bi bi-bar-chart-line me-1"></i>Compare
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  {% if comparison %}
+
+  <!-- Cost category comparison -->
+  {% set cities_list = comparison.keys() | list %}
+  {% set all_cats = [] %}
+  {% for city, d in comparison.items() %}
+    {% for cat in d.categories %}
+      {% if cat not in all_cats %}{% set _ = all_cats.append(cat) %}{% endif %}
+    {% endfor %}
+  {% endfor %}
+
+  <!-- Key Insights -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 pt-3">
+      <h6 class="fw-bold"><i class="bi bi-lightbulb text-warning me-2"></i>Key Insights</h6>
+    </div>
+    <div class="card-body pb-3">
+      <ul class="list-unstyled mb-0">
+        {% if most_affordable_city %}
+        <li class="mb-2">
+          <i class="bi bi-trophy-fill text-success me-2"></i>
+          <strong>The most affordable city is:</strong> {{ most_affordable_city }}
+        </li>
+        {% endif %}
+        {% if cheapest_restaurants_city %}
+        <li class="mb-2">
+          <i class="bi bi-egg-fried text-danger me-2"></i>
+          <strong>The city with the cheapest restaurants is:</strong> {{ cheapest_restaurants_city }}
+        </li>
+        {% endif %}
+        {% if cheapest_markets_city %}
+        <li>
+          <i class="bi bi-basket2 text-success me-2"></i>
+          <strong>The city with the cheapest markets is:</strong> {{ cheapest_markets_city }}
+        </li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+
+  <!-- Budget vs Salary Chart -->
+  {% set cities_sorted = [] %}
+  {% if least_affordable_rank > 0 %}
+    {% for rn in range(1, least_affordable_rank + 1) %}
+      {% for city in comparison %}
+        {% if affordability_rank.get(city, 0) == rn and city not in cities_sorted %}
+          {% set _ = cities_sorted.append(city) %}
+        {% endif %}
+      {% endfor %}
+    {% endfor %}
+  {% endif %}
+  {% if not cities_sorted %}
+    {% for city in comparison %}{% set _ = cities_sorted.append(city) %}{% endfor %}
+  {% endif %}
+
+  {% set chart_cities = [] %}
+  {% set chart_salaries = [] %}
+  {% set chart_colors = [] %}
+  {% set chart_rank_labels = [] %}
+  {% for city in cities_sorted %}
+    {% set rank = affordability_rank.get(city, 0) %}
+    {% set _ = chart_cities.append(city) %}
+    {% set _ = chart_salaries.append(city_salaries.get(city, 0)) %}
+    {% if rank == 0 %}
+      {% set _ = chart_colors.append('#546e7a') %}
+      {% set _ = chart_rank_labels.append('') %}
+    {% elif rank == least_affordable_rank and least_affordable_rank > 1 %}
+      {% set _ = chart_colors.append('#d32f2f') %}
+      {% set _ = chart_rank_labels.append('Least Affordable') %}
+    {% elif rank == 1 %}
+      {% set _ = chart_colors.append('#1b5e20') %}
+      {% set _ = chart_rank_labels.append('1st Most Affordable') %}
+    {% elif rank == 2 %}
+      {% set _ = chart_colors.append('#2e7d32') %}
+      {% set _ = chart_rank_labels.append('2nd') %}
+    {% elif rank == 3 %}
+      {% set _ = chart_colors.append('#388e3c') %}
+      {% set _ = chart_rank_labels.append('3rd') %}
+    {% elif rank == 4 %}
+      {% set _ = chart_colors.append('#4caf50') %}
+      {% set _ = chart_rank_labels.append('4th') %}
+    {% else %}
+      {% set _ = chart_colors.append('#81c784') %}
+      {% set _ = chart_rank_labels.append(rank ~ 'th') %}
+    {% endif %}
+  {% endfor %}
+
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 pt-3">
+      <h6 class="fw-bold"><i class="bi bi-bar-chart-fill text-primary me-2"></i>How your budget compares with the local salary after taxes</h6>
+    </div>
+    <div class="card-body">
+      {% if budget_total == 0 %}
+      <div class="alert alert-light border small mb-3">
+        <i class="bi bi-info-circle me-2"></i>
+        Set <strong>Your Monthly Budget</strong> in <a href="{{ url_for('profile') }}">Profile Settings</a> to see it on this chart.
+      </div>
+      {% endif %}
+      <script id="salaryChartData" type="application/json">
+      {
+        "cities": {{ chart_cities | tojson }},
+        "salaries": {{ chart_salaries | tojson }},
+        "colors": {{ chart_colors | tojson }},
+        "rankLabels": {{ chart_rank_labels | tojson }},
+        "budget": {{ budget_total | tojson }},
+        "currency": {{ profile_currency | tojson }}
+      }
+      </script>
+      <canvas id="salaryChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Detailed item comparison -->
+  {% for cat in all_cats %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-light border-0">
+      <h6 class="fw-bold mb-0">{{ cat }}</h6>
+    </div>
+    <div class="card-body p-0">
+      {% set all_items = [] %}
+      {% for city, d in comparison.items() %}
+        {% if cat in d.categories %}
+          {% for item in d.categories[cat] %}
+            {% if item.name not in all_items %}{% set _ = all_items.append(item.name) %}{% endif %}
+          {% endfor %}
+        {% endif %}
+      {% endfor %}
+
+      <div class="table-responsive">
+        <table class="table table-sm table-hover align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th>Item</th>
+              {% for city in cities_list %}
+              {% set rank = affordability_rank.get(city, 0) %}
+              <th class="text-center small">
+                {{ city }}
+                {% if rank == 1 %}
+                  <br><span class="badge text-bg-success mt-1" style="font-size:.6rem;">1st</span>
+                {% elif rank == 2 and rank < least_affordable_rank %}
+                  <br><span class="badge mt-1" style="font-size:.6rem;background:#4caf50;color:#fff;">2nd</span>
+                {% elif rank == 3 and rank < least_affordable_rank %}
+                  <br><span class="badge mt-1" style="font-size:.6rem;background:#81c784;color:#1b5e20;">3rd</span>
+                {% endif %}
+                {% if rank == least_affordable_rank and least_affordable_rank > 1 and rank != 1 %}
+                  <br><span class="badge text-bg-danger mt-1" style="font-size:.6rem;">least</span>
+                {% endif %}
+              </th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for item_name in all_items %}
+            {% set ns = namespace(prices=[]) %}
+            {% for city in cities_list %}
+              {% set d = comparison[city] %}
+              {% if cat in d.categories %}
+                {% for it in d.categories[cat] %}
+                  {% if it.name == item_name and it.price %}{% set ns.prices = ns.prices + [it.price] %}{% endif %}
+                {% endfor %}
+              {% endif %}
+            {% endfor %}
+            {% set row_min = ns.prices | min if ns.prices | length > 1 else none %}
+            {% set row_max = ns.prices | max if ns.prices | length > 1 else none %}
+            <tr>
+              <td class="small">{{ item_name }}</td>
+              {% for city in cities_list %}
+              {% set d = comparison[city] %}
+              {% set found = namespace(price=none) %}
+              {% if cat in d.categories %}
+                {% for it in d.categories[cat] %}
+                  {% if it.name == item_name %}{% set found.price = it.price %}{% endif %}
+                {% endfor %}
+              {% endif %}
+              {% set bg = '' %}
+              {% if found.price is not none and row_min is not none %}
+                {% if found.price == row_min %}{% set bg = 'table-success' %}{% endif %}
+                {% if found.price == row_max and row_max != row_min %}{% set bg = 'table-danger' %}{% endif %}
+              {% endif %}
+              <td class="text-center small fw-semibold {{ bg }}">
+                {% if found.price is not none %}
+                  {{ d.currency }} {{ '{:,.2f}'.format(found.price) }}
+                {% else %}
+                  <span class="text-muted fw-normal">—</span>
+                {% endif %}
+              </td>
+              {% endfor %}
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+
+  {% else %}
+
+  {% if selected %}
+  <div class="alert alert-warning">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    Could not load data for the selected cities. Make sure they are saved in your history first.
+  </div>
+  {% else %}
+  <div class="text-center py-5 text-muted">
+    <i class="bi bi-bar-chart-line display-3 d-block mb-3"></i>
+    <p>Select cities above to compare.</p>
+    <a href="{{ url_for('history') }}" class="btn btn-outline-primary btn-sm">
+      Browse History
+    </a>
+  </div>
+  {% endif %}
+
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+(function () {
+  const el = document.getElementById('salaryChartData');
+  if (!el) return;
+  const d = JSON.parse(el.textContent);
+  if (!d.cities.length) return;
+
+  const labels = d.cities.map((city, i) =>
+    d.rankLabels[i] ? [city, d.rankLabels[i]] : [city]
+  );
+
+  const budgetData = d.cities.map(() => d.budget);
+
+  new Chart(document.getElementById('salaryChart'), {
+    type: 'bar',
+    data: {
+      labels: labels,
+      datasets: [
+        {
+          label: 'My Monthly Budget',
+          data: budgetData,
+          backgroundColor: 'rgba(25, 118, 210, 0.75)',
+          borderColor: '#1565c0',
+          borderWidth: 1,
+          borderRadius: 4,
+        },
+        {
+          label: 'Avg Net Salary (After Tax)',
+          data: d.salaries,
+          backgroundColor: d.colors.map(c => c + 'bf'),
+          borderColor: d.colors,
+          borderWidth: 1,
+          borderRadius: 4,
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' },
+        tooltip: {
+          callbacks: {
+            label: function (ctx) {
+              const val = ctx.parsed.y;
+              return ' ' + ctx.dataset.label + ': ' + d.currency + ' ' + val.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            }
+          }
+        }
+      },
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: {
+            callback: function (val) {
+              return d.currency + ' ' + val.toLocaleString();
+            }
+          }
+        }
+      }
+    }
+  });
+})();
+</script>
+{% endblock %}

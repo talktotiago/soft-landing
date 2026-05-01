@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\fus\\\\Desktop\\\\App Claude\\\\static\\\\css\")",
+      "Bash(Out-Null)",
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\fus\\\\Desktop\\\\App Claude\\\\static\\\\js\")",
+      "Bash(New-Item -ItemType Directory -Force -Path \"C:\\\\Users\\\\fus\\\\Desktop\\\\App Claude\\\\templates\")"
+    ]
+  }
+}

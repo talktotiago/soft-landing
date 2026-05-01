@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}Soft Landing — Find Your Next Home{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero-section d-flex align-items-center">
+  <div class="container text-center text-white">
+    <div class="hero-content">
+      <h1 class="display-4 fw-bold mb-2">
+        <i class="bi bi-airplane-fill text-warning me-2"></i>Soft Landing
+      </h1>
+      <p class="lead mb-4 text-light opacity-75">
+        Personalized cost-of-living reports for digital nomads &amp; long-term travelers.
+      </p>
+
+      <!-- Search bar -->
+      <form action="{{ url_for('search') }}" method="POST" id="searchForm">
+        <div class="row justify-content-center">
+          <div class="col-md-7 col-lg-5">
+            <div class="input-group input-group-lg shadow">
+              <span class="input-group-text bg-white border-0">
+                <i class="bi bi-geo-alt-fill text-primary"></i>
+              </span>
+              <input
+                type="text"
+                name="city"
+                id="cityInput"
+                class="form-control border-0 fw-semibold"
+                placeholder="Which city are you curious to live in?"
+                autocomplete="off"
+                required
+              >
+              <button class="btn btn-warning fw-bold px-4" type="submit" id="searchBtn">
+                <i class="bi bi-search me-1"></i>Explore
+              </button>
+            </div>
+            <div class="form-text text-light opacity-50 mt-2 small">
+              Try: Barcelona, Lisbon, Chiang Mai, Buenos Aires, Medellín…
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- Loading overlay (shown during scrape) -->
+<div id="loadingOverlay" class="loading-overlay d-none">
+  <div class="text-center text-white">
+    <div class="spinner-border spinner-border-lg text-warning mb-3" role="status"></div>
+    <h5>Fetching data for your city…</h5>
+    <p class="text-light opacity-75 small">Scraping Numbeo &amp; curating videos — this may take a few seconds.</p>
+  </div>
+</div>
+
+<!-- Features strip -->
+<section class="py-5 bg-light">
+  <div class="container">
+    <div class="row g-4 text-center">
+      <div class="col-md-4">
+        <div class="feature-card p-4 rounded-3 bg-white shadow-sm h-100">
+          <div class="feature-icon mb-3"><i class="bi bi-currency-dollar"></i></div>
+          <h5 class="fw-bold">Personalized Costs</h5>
+          <p class="text-muted small mb-0">Enter your shopping list and get a custom monthly budget tailored to your lifestyle.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card p-4 rounded-3 bg-white shadow-sm h-100">
+          <div class="feature-icon mb-3"><i class="bi bi-bar-chart-line-fill"></i></div>
+          <h5 class="fw-bold">Compare Cities</h5>
+          <p class="text-muted small mb-0">Side-by-side cost comparisons across all major expense categories.</p>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="feature-card p-4 rounded-3 bg-white shadow-sm h-100">
+          <div class="feature-icon mb-3"><i class="bi bi-play-circle-fill"></i></div>
+          <h5 class="fw-bold">Curated Videos</h5>
+          <p class="text-muted small mb-0">Handpicked YouTube guides on food, lifestyle, and cost of living for every city.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Recent reports -->
+{% if recent_reports %}
+<section class="py-5">
+  <div class="container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+      <h4 class="fw-bold mb-0"><i class="bi bi-clock-history me-2 text-primary"></i>Recently Explored</h4>
+      <a href="{{ url_for('history') }}" class="btn btn-sm btn-outline-secondary">View all</a>
+    </div>
+    <div class="row g-3">
+      {% for r in recent_reports %}
+      <div class="col-6 col-md-4 col-lg-2">
+        <a href="{{ url_for('report', city=r.city_name.replace(' ', '-')) }}"
+           class="text-decoration-none">
+          <div class="city-card card h-100 border-0 shadow-sm text-center p-3">
+            <div class="city-initial">{{ r.city_name[0].upper() }}</div>
+            <div class="fw-semibold mt-2 small text-dark">{{ r.city_name }}</div>
+            <div class="text-muted" style="font-size:.7rem">{{ r.created_at[:10] }}</div>
+          </div>
+        </a>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.getElementById('searchForm').addEventListener('submit', function () {
+  document.getElementById('loadingOverlay').classList.remove('d-none');
+});
+</script>
+{% endblock %}

@@ -1,0 +1,169 @@
+/* ─── Base ─────────────────────────────────────────────────────────────────── */
+:root {
+  --sl-dark:    #1a1a2e;
+  --sl-mid:     #16213e;
+  --sl-accent:  #f5a623;
+  --sl-light:   #f8f9fa;
+  --sl-border:  #dee2e6;
+}
+
+body {
+  padding-top: 56px;
+  background-color: #f4f5f7;
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Hero ─────────────────────────────────────────────────────────────────── */
+.hero-section {
+  min-height: 55vh;
+  background: linear-gradient(135deg, var(--sl-dark) 0%, var(--sl-mid) 60%, #0f3460 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.hero-section::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  padding: 4rem 1rem;
+}
+
+/* ─── Search bar ───────────────────────────────────────────────────────────── */
+.input-group-lg .form-control {
+  font-size: 1rem;
+}
+
+/* ─── Feature cards ────────────────────────────────────────────────────────── */
+.feature-icon {
+  font-size: 2.2rem;
+  color: var(--sl-accent);
+}
+
+.feature-card {
+  transition: transform .2s, box-shadow .2s;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.1) !important;
+}
+
+/* ─── City cards (recent) ──────────────────────────────────────────────────── */
+.city-card {
+  transition: transform .2s, box-shadow .2s;
+}
+.city-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.12) !important;
+}
+
+.city-initial {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--sl-dark), #0f3460);
+  color: white;
+  font-size: 1.3rem;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+/* ─── Loading overlay ──────────────────────────────────────────────────────── */
+.loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26,26,46,.92);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinner-border-lg {
+  width: 3rem;
+  height: 3rem;
+  border-width: .35em;
+}
+
+/* ─── Report page ──────────────────────────────────────────────────────────── */
+.report-header {
+  background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+  border: 1px solid var(--sl-border);
+}
+
+.summary-card {
+  background: white;
+  border-left: 4px solid var(--sl-accent) !important;
+  transition: transform .15s;
+}
+.summary-card:hover {
+  transform: translateY(-2px);
+}
+
+/* ─── Market calculator ────────────────────────────────────────────────────── */
+.market-item-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .35rem .5rem;
+  border-radius: .375rem;
+  transition: background .15s;
+}
+.market-item-row:hover {
+  background: #f8f9fa;
+}
+.market-item-row label {
+  flex: 1;
+  font-size: .8rem;
+  cursor: pointer;
+  margin: 0;
+}
+.market-item-row input[type='number'] {
+  width: 60px;
+  font-size: .8rem;
+}
+.market-item-row .item-subtotal {
+  font-size: .75rem;
+  color: #6c757d;
+  min-width: 55px;
+  text-align: right;
+}
+
+/* ─── Nav tabs ─────────────────────────────────────────────────────────────── */
+.nav-tabs .nav-link {
+  font-size: .8rem;
+  padding: .4rem .75rem;
+  color: #6c757d;
+}
+.nav-tabs .nav-link.active {
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+/* ─── Tables ────────────────────────────────────────────────────────────────── */
+.table-hover tbody tr:hover {
+  background-color: rgba(13,110,253,.04);
+}
+
+/* ─── Footer ────────────────────────────────────────────────────────────────── */
+.footer {
+  margin-top: 4rem;
+}
+
+/* ─── Responsive tweaks ─────────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+  .hero-content {
+    padding: 3rem .5rem;
+  }
+  .display-4 {
+    font-size: 1.8rem;
+  }
+}

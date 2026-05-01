@@ -1,0 +1,134 @@
+{% extends "base.html" %}
+{% block title %}Report History — Soft Landing{% endblock %}
+
+{% block content %}
+<div class="container mt-5 pt-4">
+
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="fw-bold mb-0">
+      <i class="bi bi-clock-history me-2 text-primary"></i>Report History
+    </h3>
+    <a href="{{ url_for('index') }}" class="btn btn-outline-primary btn-sm">
+      <i class="bi bi-plus-lg me-1"></i>New Search
+    </a>
+  </div>
+
+  {% if reports %}
+  <!-- Filter input -->
+  <div class="mb-3">
+    <input type="text" id="filterInput" class="form-control" placeholder="Filter cities…">
+  </div>
+
+  <div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-hover align-middle mb-0" id="historyTable">
+          <thead class="table-dark">
+            <tr>
+              <th>#</th>
+              <th>City</th>
+              <th>Saved On</th>
+              <th class="text-end">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in reports %}
+            <tr id="row-{{ r.id }}">
+              <td class="text-muted small">{{ loop.index }}</td>
+              <td>
+                <a href="{{ url_for('report', city=r.city_name.replace(' ', '-')) }}"
+                   class="text-decoration-none fw-semibold">
+                  <i class="bi bi-geo-alt me-1 text-danger"></i>{{ r.city_name }}
+                </a>
+              </td>
+              <td class="text-muted small">{{ r.created_at[:16] }}</td>
+              <td class="text-end">
+                <a href="{{ url_for('report', city=r.city_name.replace(' ', '-')) }}"
+                   class="btn btn-sm btn-outline-primary me-1">
+                  <i class="bi bi-eye"></i>
+                </a>
+                <a href="{{ url_for('compare') }}?city={{ r.city_name.replace(' ', '-') }}"
+                   class="btn btn-sm btn-outline-secondary me-1">
+                  <i class="bi bi-bar-chart-line"></i>
+                </a>
+                <button class="btn btn-sm btn-outline-danger delete-btn"
+                        data-id="{{ r.id }}" data-city="{{ r.city_name }}">
+                  <i class="bi bi-trash3"></i>
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compare selected cities -->
+  <div class="mt-4">
+    <div class="card border-0 shadow-sm p-3">
+      <h6 class="fw-bold mb-2"><i class="bi bi-bar-chart-line me-2 text-primary"></i>Compare Cities</h6>
+      <p class="small text-muted mb-3">Select cities from history to compare side-by-side.</p>
+      <div class="d-flex flex-wrap gap-2 mb-3" id="compareCheckboxes">
+        {% for r in reports %}
+        <div class="form-check form-check-inline">
+          <input class="form-check-input compare-check" type="checkbox"
+                 value="{{ r.city_name.replace(' ', '-') }}" id="chk-{{ r.id }}">
+          <label class="form-check-label small" for="chk-{{ r.id }}">{{ r.city_name }}</label>
+        </div>
+        {% endfor %}
+      </div>
+      <button class="btn btn-primary btn-sm" id="compareBtn">
+        <i class="bi bi-bar-chart-line me-1"></i>Compare Selected
+      </button>
+    </div>
+  </div>
+
+  {% else %}
+  <div class="text-center py-5">
+    <i class="bi bi-inbox display-3 text-muted mb-3 d-block"></i>
+    <h5 class="text-muted">No reports saved yet.</h5>
+    <a href="{{ url_for('index') }}" class="btn btn-primary mt-2">
+      <i class="bi bi-search me-1"></i>Search your first city
+    </a>
+  </div>
+  {% endif %}
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Filter
+document.getElementById('filterInput')?.addEventListener('input', function () {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#historyTable tbody tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+});
+
+// Delete
+document.querySelectorAll('.delete-btn').forEach(btn => {
+  btn.addEventListener('click', function () {
+    const id = this.dataset.id;
+    const city = this.dataset.city;
+    if (!confirm(`Delete report for "${city}"?`)) return;
+    fetch(`/api/report/${id}`, { method: 'DELETE' })
+      .then(r => r.json())
+      .then(d => {
+        if (d.ok) {
+          document.getElementById(`row-${id}`)?.remove();
+        }
+      });
+  });
+});
+
+// Compare
+document.getElementById('compareBtn')?.addEventListener('click', function () {
+  const checked = [...document.querySelectorAll('.compare-check:checked')].map(c => c.value);
+  if (checked.length < 2) { alert('Select at least 2 cities to compare.'); return; }
+  const params = checked.map(c => `city=${encodeURIComponent(c)}`).join('&');
+  window.location.href = `/compare?${params}`;
+});
+</script>
+{% endblock %}

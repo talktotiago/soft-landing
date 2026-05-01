@@ -1,0 +1,98 @@
+Summary
+About the project
+Soft Landing is a comprehensive web application designed for long-term travelers and digital nomads seeking their ideal living destination. The app simplifies the complex process of researching new cities by providing personalized cost-of-living reports based on individual lifestyle preferences. Users simply input "Which city are you curious to live in?" and receive detailed, customized reports that help them make informed decisions about their next adventure. The application goes beyond basic statistics by incorporating personal shopping habits and providing multimedia resources to give users a complete picture of life in their desired destination.
+
+Tech Stack
+Backend Framework: Flask (Python)
+Database: SQLite
+Web Scraping: BeautifulSoup4, Selenium WebDriver
+Data Processing: Pandas DataFrames
+Frontend Framework: Bootstrap 5
+Programming Language: Python
+Data Source: Numbeo.com
+Video Integration: YouTube API
+Additional Libraries: Requests, JSON handling
+Main Goal
+The primary objective of Soft Landing is to empower travelers with data-driven decision-making tools that facilitate destination selection based on:
+
+Personalized Cost Analysis: Tailored to individual spending habits and lifestyle
+Comparative City Analysis: Side-by-side comparison capabilities between multiple destinations
+Historical Reference: Saved reports for future consultation and planning
+Multimedia Insights: Curated video content to provide visual and cultural context
+Lifestyle Integration: Custom cost calculations based on user's specific market shopping preferences
+Functionalities
+Core Features
+1. City Research & Data Collection
+
+Simple text input for city queries
+Automated web scraping from Numbeo.com using BeautifulSoup and Selenium
+Real-time data extraction including:
+Housing costs and rental prices
+Transportation expenses
+Food and grocery prices
+Entertainment and dining costs
+Utilities and internet costs
+Healthcare expenses
+2. Personalized Market Calculator
+
+Custom shopping list input feature
+Users can specify items they plan to purchase regularly
+Personalized cost estimation based on individual consumption patterns
+Real-time price calculations for user's specific lifestyle needs
+3. Data Management & Storage
+
+Automatic DataFrame creation from scraped data
+SQLite database integration for persistent storage
+User history tracking and report archiving
+Easy retrieval of previously researched cities
+4. Cost of Living Analysis
+
+Detailed breakdown by expense categories
+Visual representations of cost distributions
+Comparative analysis between different cities
+Budget planning tools and recommendations
+5. Multimedia Integration
+
+Automated YouTube video curation with three specific queries per city:
+"Where to go for eating in [City Name]"
+"Quick Guide to [City Name]"
+"Cost of Living in [City Name]"
+Embedded video players within reports
+Visual learning resources to complement statistical data
+6. Report Generation & History
+
+Comprehensive city reports with all collected data
+Personal shopping cost estimates
+Historical report access for comparison
+Export and sharing capabilities
+Bootstrap Design
+Design Architecture
+The application leverages Bootstrap 5's powerful framework to deliver a responsive, mobile-first design that ensures optimal user experience across all devices and screen sizes.
+
+Key Design Components
+Navigation & Layout
+
+Responsive Navbar: Fixed-top navigation with brand logo and menu items
+Fluid Container System: Bootstrap's grid system for consistent spacing
+Mobile-First Approach: Seamless experience on smartphones, tablets, and desktops
+User Interface Elements
+
+Search Interface: Prominent search bar with Bootstrap input groups and validation
+Progress Indicators: Loading spinners and progress bars during data scraping operations
+Alert System: Success, warning, and error messages using Bootstrap alert components
+Modal Dialogs: For settings, confirmations, and detailed information display
+Content Organization
+
+Card Layout: Bootstrap cards for organizing different report sections
+Tabbed Interface: Navigation tabs for switching between cost categories
+Accordion Components: Collapsible sections for detailed breakdowns
+List Groups: Organized display of market items and costs
+Data Presentation
+
+Tables: Responsive Bootstrap tables for cost comparisons
+Badge Components: Highlighting important metrics and categories
+Progress Bars: Visual representation of cost percentages and comparisons
+Visual Design Elements
+
+Color Scheme: Professional light-gray, gray, white, black and  palette representing trust and growth
+Typography: Bootstrap's typography scale for
