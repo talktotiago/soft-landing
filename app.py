@@ -1,15 +1,16 @@
 import os
+from dotenv import load_dotenv
+load_dotenv()  # Must run before any local imports that read env vars
+
 from flask import (Flask, render_template, request, redirect,
                    url_for, jsonify, flash)
-from dotenv import load_dotenv
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from database import (init_db, save_report, get_report, get_all_reports,
                       delete_report, save_market_items, get_market_items,
                       get_profile, save_profile)
 from scraper import scrape_city_data
 from youtube_api import get_city_videos
-
-load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'soft-landing-dev-key-change-me')
@@ -118,7 +119,9 @@ def search():
 def report(city):
     city_display = city.replace('-', ' ').title()
     refresh = request.args.get('refresh') == '1'
-    profile_currency = get_profile().get('currency', 'USD')
+    profile = get_profile()
+    profile_currency = profile.get('currency', 'USD')
+    profile_budget = float(profile.get('budget', 0) or 0)
 
     cached = None if refresh else get_report(city_display)
     # Invalidate cache when currency changed or report predates country detection
@@ -149,6 +152,7 @@ def report(city):
         data=data,
         videos=videos,
         from_cache=from_cache,
+        profile_budget=profile_budget,
     )
 
 
@@ -164,18 +168,23 @@ def compare():
     profile_data = get_profile()
     profile_currency = profile_data.get('currency', 'USD')
     budget_total = float(profile_data.get('budget', 0) or 0)
-    comparison = {}
-    for c in cities:
+    def _fetch(c):
         c_display = c.replace('-', ' ').title()
         d = get_report(c_display)
         if d and d.get('currency') != profile_currency:
             d = None
         if not d:
             d = scrape_city_data(c, currency=profile_currency)
+        return c_display, d
+
+    comparison = {}
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {executor.submit(_fetch, c): c for c in cities}
+        for future in as_completed(futures):
+            c_display, d = future.result()
             if d:
                 save_report(c_display, d)
-        if d:
-            comparison[c_display] = d
+                comparison[c_display] = d
 
     # Compute affordability rankings: count how many items each city prices lowest
     affordability_rank = {}

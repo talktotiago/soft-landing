@@ -108,7 +108,8 @@ def scrape_city_data(city, currency='USD'):
     resp = None
     for attempt in range(MAX_RETRIES):
         try:
-            time.sleep(RETRY_DELAYS[attempt - 1] if attempt else random.uniform(1.5, 3.0))
+            if attempt > 0:
+                time.sleep(RETRY_DELAYS[attempt - 1])
             resp = requests.get(url, headers=HEADERS, timeout=20)
             break
         except requests.exceptions.ConnectionError:

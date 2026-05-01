@@ -1,18 +1,18 @@
 import requests
 import os
 
-YOUTUBE_API_KEY = os.getenv('YOUTUBE_API_KEY', '')
 SEARCH_URL = 'https://www.googleapis.com/youtube/v3/search'
 
 
 def _search(query, max_results=3):
-    if not YOUTUBE_API_KEY:
+    api_key = os.getenv('YOUTUBE_API_KEY', '')
+    if not api_key:
         return []
     try:
         resp = requests.get(SEARCH_URL, params={
             'part': 'snippet',
             'q': query,
-            'key': YOUTUBE_API_KEY,
+            'key': api_key,
             'maxResults': max_results,
             'type': 'video',
             'videoEmbeddable': 'true',
@@ -39,8 +39,9 @@ def _search(query, max_results=3):
 
 def get_city_videos(city_name):
     queries = [
-        f'Where to go for eating in {city_name}',
-        f'Quick Guide to {city_name}',
+        f'Where to eat in {city_name}',
+        f'Places to visit in {city_name}',
+        f'Top attractions in {city_name}',
         f'Cost of Living in {city_name}',
     ]
     return {q: _search(q) for q in queries}

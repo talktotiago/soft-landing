@@ -42,9 +42,42 @@
   </div>
 
 
-  <div class="row g-4">
-    <!-- Cost categories -->
-    <div class="col-12">
+  <!-- Budget vs Local Salary -->
+  {% set sal_ns = namespace(salary=0) %}
+  {% if 'Salaries And Financing' in data.categories %}
+    {% for item in data.categories['Salaries And Financing'] %}
+      {% if 'Average Monthly Net Salary' in item.name %}{% set sal_ns.salary = item.price %}{% endif %}
+    {% endfor %}
+  {% endif %}
+  {% if profile_budget > 0 and sal_ns.salary > 0 %}
+  {% set diff_pct = (((profile_budget - sal_ns.salary) / sal_ns.salary) * 100) | abs | round(1) %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+      <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 text-primary me-2"></i>Budget vs Local Salary</h6>
+      {% if profile_budget >= sal_ns.salary %}
+      <div class="alert alert-success py-2 mb-2">
+        <i class="bi bi-arrow-up-circle-fill me-2"></i>
+        Your budget is <strong>{{ diff_pct }}% higher</strong> than the local salary
+      </div>
+      {% else %}
+      <div class="alert alert-danger py-2 mb-2">
+        <i class="bi bi-arrow-down-circle-fill me-2"></i>
+        Your budget is <strong>{{ diff_pct }}% lower</strong> than the local salary
+      </div>
+      {% endif %}
+      <p class="text-muted small mb-0">
+        Your Budget: <strong>{{ data.currency }} {{ '{:,.2f}'.format(profile_budget) }}</strong>
+        &nbsp;·&nbsp;
+        Local Salary: <strong>{{ data.currency }} {{ '{:,.2f}'.format(sal_ns.salary) }}</strong>
+      </p>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="d-flex gap-4 align-items-start">
+
+    <!-- Main content -->
+    <div style="flex:1 1 0;min-width:0;">
 
       {% if data.categories %}
       {% set cat_meta = {
@@ -100,57 +133,140 @@
       {% endfor %}
       {% endif %}
 
-    </div>
-  </div>
-
-  <!-- Videos section -->
-  {% if videos %}
-  {% set has_videos = namespace(found=false) %}
-  {% for query, vlist in videos.items() %}
-    {% if vlist %}{% set has_videos.found = true %}{% endif %}
-  {% endfor %}
-
-  {% if has_videos.found %}
-  <div class="card border-0 shadow-sm mb-5">
-    <div class="card-header bg-danger-subtle border-0">
-      <h5 class="fw-bold mb-0">
-        <i class="bi bi-youtube me-2 text-danger"></i>Video Guides for {{ city }}
-      </h5>
-    </div>
-    <div class="card-body">
-      {% for query, vlist in videos.items() %}
-        {% if vlist %}
-        <h6 class="text-muted small fw-semibold text-uppercase mb-3 mt-3">{{ query }}</h6>
-        <div class="row g-3 mb-2">
-          {% for v in vlist %}
-          <div class="col-md-4">
-            <div class="card h-100 border shadow-sm">
-              <div class="ratio ratio-16x9">
-                <iframe src="{{ v.embed_url }}" title="{{ v.title }}"
-                        allowfullscreen loading="lazy"
-                        class="rounded-top"></iframe>
-              </div>
-              <div class="card-body p-2">
-                <p class="small fw-semibold mb-0 text-truncate" title="{{ v.title }}">{{ v.title }}</p>
-                <p class="text-muted mb-0" style="font-size:.7rem">{{ v.channel }}</p>
-              </div>
-            </div>
-          </div>
-          {% endfor %}
+      <!-- Monthly Expenses Prevision -->
+      <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-info-subtle border-0">
+          <h5 class="fw-bold mb-0">
+            <i class="bi bi-calculator me-2 text-info"></i>Monthly Expenses Prevision
+          </h5>
         </div>
-        {% endif %}
-      {% endfor %}
-    </div>
-  </div>
-  {% endif %}
+        <div class="card-body" id="expensesPreview">
+          <p class="text-muted small mb-0">
+            <span class="spinner-border spinner-border-sm me-2"></span>Calculating…
+          </p>
+        </div>
+      </div>
 
-  {% else %}
-  <div class="alert alert-light border mb-5 small">
-    <i class="bi bi-info-circle me-2"></i>
-    Add a <code>YOUTUBE_API_KEY</code> to your <code>.env</code> file to enable video guides.
+    </div>
+
+    <!-- Sidebar: Video Guides -->
+    <div class="flex-shrink-0 d-none d-lg-block" style="width:35%;">
+      <div class="position-sticky" style="top:76px;max-height:calc(100vh - 90px);overflow-y:auto;">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-danger-subtle border-0">
+            <h6 class="fw-bold mb-0">
+              <i class="bi bi-youtube me-2 text-danger"></i>Video Guides — {{ city }}
+            </h6>
+          </div>
+          <div class="card-body p-3">
+            {% if videos %}
+              {% set has_videos = namespace(found=false) %}
+              {% for query, vlist in videos.items() %}
+                {% if vlist %}{% set has_videos.found = true %}{% endif %}
+              {% endfor %}
+              {% if has_videos.found %}
+                {% for query, vlist in videos.items() %}
+                  {% if vlist %}
+                  <p class="small fw-semibold text-uppercase text-muted mb-2 mt-3">{{ query }}</p>
+                  {% for v in vlist %}
+                  <div class="mb-3">
+                    <div class="ratio ratio-16x9 mb-1">
+                      <iframe src="{{ v.embed_url }}" title="{{ v.title }}"
+                              allowfullscreen loading="lazy" class="rounded"></iframe>
+                    </div>
+                    <p class="small fw-semibold mb-0 text-truncate" title="{{ v.title }}">{{ v.title }}</p>
+                    <p class="text-muted mb-0" style="font-size:.7rem">{{ v.channel }}</p>
+                  </div>
+                  {% endfor %}
+                  {% endif %}
+                {% endfor %}
+              {% else %}
+                <p class="text-muted small mb-0">No videos found for this city.</p>
+              {% endif %}
+            {% else %}
+              <p class="text-muted small mb-0">
+                <i class="bi bi-info-circle me-2"></i>
+                Add a <code>YOUTUBE_API_KEY</code> to your <code>.env</code> to enable video guides.
+              </p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
   </div>
-  {% endif %}
 
 </div>
 
+{% endblock %}
+
+{% block scripts %}
+<script id="reportData" type="application/json">
+{{ data | tojson }}
+</script>
+<script>
+(function () {
+  const STORAGE_KEY = 'softlanding_calc_v1';
+  const calcData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  const previewEl = document.getElementById('expensesPreview');
+  if (!previewEl) return;
+
+  if (!Object.keys(calcData).length) {
+    previewEl.innerHTML = '<p class="text-muted small mb-0"><i class="bi bi-info-circle me-2"></i>' +
+      'No calculator data found. <a href="/profile">Set up your Monthly Expenses Calculator</a> to see your estimated costs here.</p>';
+    return;
+  }
+
+  const reportData = JSON.parse(document.getElementById('reportData').textContent);
+  const currency = reportData.currency || '';
+  const cityName = reportData.city || '';
+
+  const lookup = {};
+  Object.entries(reportData.categories || {}).forEach(function ([cat, items]) {
+    items.forEach(function (item) {
+      if (item.price) lookup[item.name] = { price: item.price, category: cat };
+    });
+  });
+
+  let restaurantsTotal = 0;
+  let marketsTotal = 0;
+  let matched = 0;
+
+  Object.entries(calcData).forEach(function ([name, qty]) {
+    const found = lookup[name];
+    if (!found) return;
+    matched++;
+    const sub = found.price * qty;
+    if (found.category === 'Restaurants') restaurantsTotal += sub;
+    else if (found.category === 'Markets') marketsTotal += sub;
+  });
+
+  if (!matched) {
+    previewEl.innerHTML = '<p class="text-muted small mb-0">None of your calculator items were found in this city\'s data.</p>';
+    return;
+  }
+
+  const fmt = function (v) {
+    return currency + ' ' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  const grandTotal = restaurantsTotal + marketsTotal;
+  let rows = '';
+  if (marketsTotal > 0) rows +=
+    '<li class="list-group-item d-flex justify-content-between align-items-center px-0">' +
+    '<span><i class="bi bi-basket2 text-success me-2"></i>Your total expenses with Market</span>' +
+    '<strong>' + fmt(marketsTotal) + '</strong></li>';
+  if (restaurantsTotal > 0) rows +=
+    '<li class="list-group-item d-flex justify-content-between align-items-center px-0">' +
+    '<span><i class="bi bi-egg-fried text-danger me-2"></i>Your total expenses with Restaurants</span>' +
+    '<strong>' + fmt(restaurantsTotal) + '</strong></li>';
+
+  previewEl.innerHTML =
+    '<p class="text-muted small mb-3">Based on your <a href="/profile">Monthly Expenses Calculator</a>:</p>' +
+    '<ul class="list-group list-group-flush mb-3">' + rows + '</ul>' +
+    '<div class="alert alert-primary py-2 mb-0">' +
+    '<i class="bi bi-calculator me-2"></i>' +
+    '<strong>Total expenses per month: ' + fmt(grandTotal) + '</strong> in ' + cityName + '</div>';
+})();
+</script>
 {% endblock %}
