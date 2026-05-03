@@ -6,14 +6,16 @@ from dotenv import load_dotenv
 load_dotenv()  # Must run before any local imports that read env vars
 
 from flask import (Flask, render_template, request, redirect,
-                   url_for, jsonify, flash)
+                   url_for, jsonify, flash, send_file)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from database import (init_db, save_report, get_report, get_report_age,
                       get_all_reports, delete_report, save_market_items,
                       get_market_items, get_profile, save_profile,
                       save_youtube_cache, get_youtube_cache,
-                      save_calculator_data, get_calculator_data)
+                      save_calculator_data, get_calculator_data,
+                      save_comparison, get_all_comparisons,
+                      update_comparison, delete_comparison)
 from scraper import scrape_city_data, resolve_city_slug, suggest_cities, resolve_true_slug
 from youtube_api import get_city_videos
 
@@ -175,6 +177,58 @@ _COUNTRY_ISO = {
 }
 
 
+_COUNTRY_CONTINENT = {
+    # Americas
+    'Argentina': 'Americas', 'Bolivia': 'Americas', 'Brazil': 'Americas',
+    'Canada': 'Americas', 'Chile': 'Americas', 'Colombia': 'Americas',
+    'Costa Rica': 'Americas', 'Cuba': 'Americas', 'Dominican Republic': 'Americas',
+    'Ecuador': 'Americas', 'El Salvador': 'Americas', 'Guatemala': 'Americas',
+    'Honduras': 'Americas', 'Jamaica': 'Americas', 'Mexico': 'Americas',
+    'Nicaragua': 'Americas', 'Panama': 'Americas', 'Paraguay': 'Americas',
+    'Peru': 'Americas', 'United States': 'Americas', 'Uruguay': 'Americas',
+    'Venezuela': 'Americas',
+    # Europe
+    'Albania': 'Europe', 'Austria': 'Europe', 'Belarus': 'Europe',
+    'Belgium': 'Europe', 'Bosnia And Herzegovina': 'Europe', 'Bulgaria': 'Europe',
+    'Croatia': 'Europe', 'Cyprus': 'Europe', 'Czech Republic': 'Europe',
+    'Denmark': 'Europe', 'Estonia': 'Europe', 'Finland': 'Europe',
+    'France': 'Europe', 'Germany': 'Europe', 'Greece': 'Europe',
+    'Hungary': 'Europe', 'Iceland': 'Europe', 'Ireland': 'Europe',
+    'Italy': 'Europe', 'Latvia': 'Europe', 'Lithuania': 'Europe',
+    'Luxembourg': 'Europe', 'Malta': 'Europe', 'Moldova': 'Europe',
+    'Montenegro': 'Europe', 'Netherlands': 'Europe', 'Norway': 'Europe',
+    'Poland': 'Europe', 'Portugal': 'Europe', 'Romania': 'Europe',
+    'Russia': 'Europe', 'Serbia': 'Europe', 'Slovakia': 'Europe',
+    'Slovenia': 'Europe', 'Spain': 'Europe', 'Sweden': 'Europe',
+    'Switzerland': 'Europe', 'Ukraine': 'Europe', 'United Kingdom': 'Europe',
+    # Asia
+    'Afghanistan': 'Asia', 'Armenia': 'Asia', 'Azerbaijan': 'Asia',
+    'Bahrain': 'Asia', 'Bangladesh': 'Asia', 'Cambodia': 'Asia',
+    'China': 'Asia', 'Georgia': 'Asia', 'Hong Kong': 'Asia',
+    'India': 'Asia', 'Indonesia': 'Asia', 'Iran': 'Asia',
+    'Iraq': 'Asia', 'Israel': 'Asia', 'Japan': 'Asia',
+    'Jordan': 'Asia', 'Kazakhstan': 'Asia', 'Kuwait': 'Asia',
+    'Malaysia': 'Asia', 'Mongolia': 'Asia', 'Myanmar': 'Asia',
+    'Nepal': 'Asia', 'Oman': 'Asia', 'Pakistan': 'Asia',
+    'Philippines': 'Asia', 'Qatar': 'Asia', 'Saudi Arabia': 'Asia',
+    'Singapore': 'Asia', 'South Korea': 'Asia', 'Sri Lanka': 'Asia',
+    'Taiwan': 'Asia', 'Thailand': 'Asia', 'Turkey': 'Asia',
+    'United Arab Emirates': 'Asia', 'Uzbekistan': 'Asia', 'Vietnam': 'Asia',
+    'Yemen': 'Asia',
+    # Africa
+    'Algeria': 'Africa', 'Angola': 'Africa', 'Cameroon': 'Africa',
+    'Egypt': 'Africa', 'Ethiopia': 'Africa', 'Ghana': 'Africa',
+    'Kenya': 'Africa', 'Morocco': 'Africa', 'Mozambique': 'Africa',
+    'Nigeria': 'Africa', 'Senegal': 'Africa', 'South Africa': 'Africa',
+    'Sudan': 'Africa', 'Tanzania': 'Africa', 'Tunisia': 'Africa',
+    'Uganda': 'Africa', 'Zambia': 'Africa', 'Zimbabwe': 'Africa',
+    # Oceania
+    'Australia': 'Oceania', 'New Zealand': 'Oceania',
+}
+
+_CONTINENT_ORDER = ['Americas', 'Europe', 'Asia', 'Africa', 'Oceania', 'Other']
+
+
 def _country_flag(country_name):
     code = _COUNTRY_ISO.get(country_name, '')
     if not code:
@@ -305,21 +359,28 @@ def compare():
     budget_total = float(profile_data.get('budget', 0) or 0)
     def _fetch(c):
         c_display = c.replace('-', ' ').title()
-        d = get_report(c_display)
-        if d and d.get('currency') != profile_currency:
-            d = None
-        if not d:
-            d = scrape_city_data(c, currency=profile_currency)
-        return c_display, d
+        cached = get_report(c_display)
+        if cached and cached.get('currency') == profile_currency:
+            return c_display, cached
+        # Currency mismatch or no cached data — try fresh scrape, fall back to cache
+        fresh = scrape_city_data(c, currency=profile_currency)
+        if fresh:
+            return c_display, fresh
+        if cached:
+            return c_display, cached
+        return c_display, None
 
     comparison = {}
     with ThreadPoolExecutor(max_workers=6) as executor:
         futures = {executor.submit(_fetch, c): c for c in cities}
         for future in as_completed(futures):
-            c_display, d = future.result()
-            if d:
-                save_report(c_display, d)
-                comparison[c_display] = d
+            try:
+                c_display, d = future.result()
+                if d:
+                    save_report(c_display, d)
+                    comparison[c_display] = d
+            except Exception:
+                pass
 
     # Compute affordability rankings: count how many items each city prices lowest
     affordability_rank = {}
@@ -419,9 +480,43 @@ def compare():
             calc_projection_rank_max = len(calc_projection_rank)
 
     all_reports = get_all_reports()
+
+    # Group reports by continent → country for the city selector
+    grouped_reports = {}
+    for r in all_reports:
+        cont = _COUNTRY_CONTINENT.get(r.get('country', ''), 'Other')
+        country = r.get('country') or 'Unknown'
+        grouped_reports.setdefault(cont, {}).setdefault(country, []).append(r)
+
+    # Auto-save new unique city set with continent-based name
+    if cities and comparison:
+        existing = get_all_comparisons()
+        city_set = set(cities)
+        if not any(set(sc['cities']) == city_set for sc in existing):
+            continents_seen = []
+            for d in comparison.values():
+                cont = _COUNTRY_CONTINENT.get(d.get('country', ''), 'Other')
+                if cont not in continents_seen:
+                    continents_seen.append(cont)
+            continents_seen.sort(key=lambda c: _CONTINENT_ORDER.index(c) if c in _CONTINENT_ORDER else 99)
+            cont_str = ' vs '.join(continents_seen) or 'Cities'
+            date_str = datetime.now().strftime('%d-%m-%y')
+            base_name = f'{cont_str} {date_str}'
+            existing_names = {sc['name'] for sc in existing}
+            if base_name not in existing_names:
+                auto_name = base_name
+            else:
+                counter = 2
+                while f'{base_name} ({counter})' in existing_names:
+                    counter += 1
+                auto_name = f'{base_name} ({counter})'
+            save_comparison(auto_name, cities)
+
     return render_template('compare.html',
                            comparison=comparison,
                            all_reports=all_reports,
+                           grouped_reports=grouped_reports,
+                           continent_order=_CONTINENT_ORDER,
                            selected=cities,
                            affordability_rank=affordability_rank,
                            least_affordable_rank=least_affordable_rank,
@@ -435,7 +530,8 @@ def compare():
                            salary_rank_max=salary_rank_max,
                            calc_projection_rank=calc_projection_rank,
                            calc_projection_rank_max=calc_projection_rank_max,
-                           calculator_data=get_calculator_data())
+                           calculator_data=get_calculator_data(),
+                           saved_comparisons=get_all_comparisons())
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -486,6 +582,256 @@ def api_calculator():
 def api_delete(report_id):
     delete_report(report_id)
     return jsonify({'ok': True})
+
+
+@app.route('/api/saved-comparisons', methods=['GET', 'POST'])
+def api_saved_comparisons():
+    if request.method == 'POST':
+        body = request.json or {}
+        name = body.get('name', '').strip()
+        cities = body.get('cities', [])
+        if not name or not cities:
+            return jsonify({'ok': False}), 400
+        new_id = save_comparison(name, cities)
+        return jsonify({'ok': True, 'id': new_id})
+    return jsonify(get_all_comparisons())
+
+
+@app.route('/api/saved-comparisons/<int:comp_id>', methods=['PUT', 'DELETE'])
+def api_saved_comparison(comp_id):
+    if request.method == 'DELETE':
+        delete_comparison(comp_id)
+        return jsonify({'ok': True})
+    body = request.json or {}
+    name = body.get('name', '').strip()
+    cities = body.get('cities', [])
+    if not name:
+        return jsonify({'ok': False}), 400
+    update_comparison(comp_id, name, cities)
+    return jsonify({'ok': True})
+
+
+@app.route('/compare/download')
+def compare_download():
+    from io import BytesIO
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+
+    cities = request.args.getlist('city')
+    profile_data = get_profile()
+    profile_currency = profile_data.get('currency', 'USD')
+
+    def _fetch(c):
+        c_display = c.replace('-', ' ').title()
+        cached = get_report(c_display)
+        if cached and cached.get('currency') == profile_currency:
+            return c_display, cached
+        fresh = scrape_city_data(c, currency=profile_currency)
+        if fresh:
+            return c_display, fresh
+        if cached:
+            return c_display, cached
+        return c_display, None
+
+    comparison = {}
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {executor.submit(_fetch, c): c for c in cities}
+        for future in as_completed(futures):
+            try:
+                c_display, d = future.result()
+                if d:
+                    comparison[c_display] = d
+            except Exception:
+                pass
+
+    if not comparison:
+        flash('No data available to download.', 'warning')
+        return redirect(url_for('compare'))
+
+    city_names = list(comparison.keys())
+    calc_data = get_calculator_data()
+    wb = Workbook()
+    header_font = Font(bold=True, color='FFFFFF')
+    header_fill = PatternFill('solid', fgColor='1565C0')
+    cat_header_fill = PatternFill('solid', fgColor='37474F')
+    green_fill = PatternFill('solid', fgColor='C8E6C9')
+    red_fill = PatternFill('solid', fgColor='FFCDD2')
+
+    def _style_header(ws, row, cols):
+        for col in range(1, cols + 1):
+            cell = ws.cell(row=row, column=col)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    def _set_col_widths(ws, cols):
+        for col in range(1, cols + 1):
+            ws.column_dimensions[get_column_letter(col)].width = 24
+
+    # Build city price lookup for calculator matching
+    def _norm(s):
+        return ' '.join(s.replace('²', '2').split()).lower()
+
+    city_price_lookup = {}
+    item_category_map = {}
+    for city, city_data in comparison.items():
+        city_price_lookup[city] = {}
+        for cat, items in city_data.get('categories', {}).items():
+            for item in items:
+                if item.get('price'):
+                    key = _norm(item['name'])
+                    city_price_lookup[city][key] = item['price']
+                    if key not in item_category_map:
+                        item_category_map[key] = cat
+
+    # Sheet 1: Monthly Cost Projection
+    ws_proj = wb.active
+    ws_proj.title = 'Monthly Projection'
+    ws_proj.cell(1, 1, 'Item')
+    ws_proj.cell(1, 2, 'Qty')
+    for col, city in enumerate(city_names, 3):
+        ws_proj.cell(1, col, city)
+    _style_header(ws_proj, 1, 2 + len(city_names))
+
+    proj_rows = []
+    if calc_data:
+        for item_name, qty in calc_data.items():
+            if not qty:
+                continue
+            key = _norm(item_name)
+            city_totals_row = {}
+            for city in city_names:
+                price = city_price_lookup[city].get(key)
+                if price:
+                    city_totals_row[city] = round(price * qty, 2)
+            if city_totals_row:
+                proj_rows.append({'name': item_name, 'qty': qty, 'totals': city_totals_row})
+
+    grand_totals = {city: 0.0 for city in city_names}
+    for excel_row, pr in enumerate(proj_rows, 2):
+        ws_proj.cell(excel_row, 1, pr['name'])
+        ws_proj.cell(excel_row, 2, pr['qty']).alignment = Alignment(horizontal='center')
+        row_vals = []
+        for col, city in enumerate(city_names, 3):
+            val = pr['totals'].get(city)
+            cell = ws_proj.cell(excel_row, col, val)
+            cell.alignment = Alignment(horizontal='center')
+            if val is not None:
+                row_vals.append((col, val))
+                grand_totals[city] += val
+        if len(row_vals) > 1:
+            min_v = min(v for _, v in row_vals)
+            max_v = max(v for _, v in row_vals)
+            for col, v in row_vals:
+                ws_proj.cell(excel_row, col).fill = green_fill if v == min_v else (red_fill if v == max_v else PatternFill())
+
+    # Total row
+    total_row = len(proj_rows) + 2
+    total_label_cell = ws_proj.cell(total_row, 1, 'Estimated Total / month')
+    total_label_cell.font = Font(bold=True)
+    ws_proj.cell(total_row, 2, '')
+    total_vals = []
+    for col, city in enumerate(city_names, 3):
+        val = round(grand_totals[city], 2) if grand_totals[city] else None
+        cell = ws_proj.cell(total_row, col, val)
+        cell.font = Font(bold=True)
+        cell.alignment = Alignment(horizontal='center')
+        if val:
+            total_vals.append((col, val))
+    if len(total_vals) > 1:
+        min_v = min(v for _, v in total_vals)
+        max_v = max(v for _, v in total_vals)
+        for col, v in total_vals:
+            ws_proj.cell(total_row, col).fill = green_fill if v == min_v else (red_fill if v == max_v else PatternFill())
+
+    ws_proj.column_dimensions['A'].width = 36
+    ws_proj.column_dimensions['B'].width = 8
+    for col in range(3, 3 + len(city_names)):
+        ws_proj.column_dimensions[get_column_letter(col)].width = 24
+
+    # Sheet 2: All Items (all categories combined, with Category column)
+    ws_all = wb.create_sheet(title='All Items')
+    ws_all.cell(1, 1, 'Category')
+    ws_all.cell(1, 2, 'Item')
+    for col, city in enumerate(city_names, 3):
+        ws_all.cell(1, col, city)
+    _style_header(ws_all, 1, 2 + len(city_names))
+
+    all_cats = []
+    for d in comparison.values():
+        for cat in d.get('categories', {}):
+            if cat not in all_cats:
+                all_cats.append(cat)
+
+    excel_row = 2
+    for cat in all_cats:
+        # Category header row
+        cat_cell = ws_all.cell(excel_row, 1, cat)
+        cat_cell.font = Font(bold=True, color='FFFFFF')
+        ws_all.merge_cells(start_row=excel_row, start_column=1,
+                           end_row=excel_row, end_column=2 + len(city_names))
+        for col in range(1, 3 + len(city_names)):
+            ws_all.cell(excel_row, col).fill = cat_header_fill
+        excel_row += 1
+
+        all_items = []
+        for city in city_names:
+            for item in comparison[city].get('categories', {}).get(cat, []):
+                if item['name'] not in all_items:
+                    all_items.append(item['name'])
+
+        for item_name in all_items:
+            ws_all.cell(excel_row, 1, '')
+            ws_all.cell(excel_row, 2, item_name)
+            row_prices = []
+            for col, city in enumerate(city_names, 3):
+                price = next(
+                    (i['price'] for i in comparison[city].get('categories', {}).get(cat, [])
+                     if i['name'] == item_name and i.get('price')),
+                    None
+                )
+                cell = ws_all.cell(excel_row, col, price)
+                cell.alignment = Alignment(horizontal='center')
+                if price is not None:
+                    row_prices.append((col, price))
+            if len(row_prices) > 1:
+                min_v = min(v for _, v in row_prices)
+                max_v = max(v for _, v in row_prices)
+                for col, v in row_prices:
+                    ws_all.cell(excel_row, col).fill = green_fill if v == min_v else (red_fill if v == max_v else PatternFill())
+            excel_row += 1
+
+    ws_all.column_dimensions['A'].width = 28
+    ws_all.column_dimensions['B'].width = 36
+    for col in range(3, 3 + len(city_names)):
+        ws_all.column_dimensions[get_column_letter(col)].width = 24
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+
+    # Use the matching saved comparison name as the filename
+    city_set = set(cities)
+    saved = get_all_comparisons()
+    comp_name = next((sc['name'] for sc in saved if set(sc['cities']) == city_set), None)
+    if not comp_name:
+        continents_seen = []
+        for d in comparison.values():
+            cont = _COUNTRY_CONTINENT.get(d.get('country', ''), 'Other')
+            if cont not in continents_seen:
+                continents_seen.append(cont)
+        continents_seen.sort(key=lambda c: _CONTINENT_ORDER.index(c) if c in _CONTINENT_ORDER else 99)
+        cont_str = ' vs '.join(continents_seen) or 'Cities'
+        comp_name = f"{cont_str} {datetime.now().strftime('%d-%m-%y')}"
+    import re as _re
+    filename = _re.sub(r'[^\w\s\-\(\)]', '', comp_name).strip()
+    filename = _re.sub(r'\s+', '-', filename) + '.xlsx'
+
+    return send_file(
+        buf, as_attachment=True, download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 
 if __name__ == '__main__':
