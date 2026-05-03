@@ -158,6 +158,14 @@ body {
   margin-top: 4rem;
 }
 
+/* ─── Collapsible card headers ──────────────────────────────────────────────── */
+.collapse-icon {
+  transition: transform .2s ease;
+}
+[data-bs-toggle="collapse"].collapsed .collapse-icon {
+  transform: rotate(-90deg);
+}
+
 /* ─── Responsive tweaks ─────────────────────────────────────────────────────── */
 @media (max-width: 576px) {
   .hero-content {

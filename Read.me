@@ -96,3 +96,88 @@ Visual Design Elements
 
 Color Scheme: Professional light-gray, gray, white, black and  palette representing trust and growth
 Typography: Bootstrap's typography scale for
+
+
+------------------------------------------
+Calculator Design:
+
+Category: Restaurants
+<checkbox> Meal at an Inexpensive Restaurant <numerical input field with up and down arrows - integer> 
+<checkbox> Meal for Two at a Mid-Range Restaurant (Three Courses, Without Drinks) <numerical input field with up and down arrows - integer>
+<checkbox> Combo Meal at McDonald's (or Equivalent Fast-Food Meal) <numerical input field with up and down arrows - integer>
+<checkbox> Domestic Draft Beer (0.5 Liter) <numerical input field with up and down arrows - integer>
+<checkbox> Imported Beer (0.33 Liter Bottle) <numerical input field with up and down arrows - integer>
+<checkbox> Cappuccino (Regular Size) <numerical input field with up and down arrows - integer>
+<checkbox> Soft Drink (Coca-Cola or Pepsi, 0.33 Liter Bottle) <numerical input field with up and down arrows - integer>
+<checkbox> Bottled Water (0.33 Liter) <numerical input field with up and down arrows - integer>
+<checkbox> Markets <numerical input field with up and down arrows - integer>
+<checkbox> Milk (Regular, 1 Liter) <numerical input field with up and down arrows - integer>
+<checkbox> Fresh White Bread (500 g Loaf) <numerical input field with up and down arrows - integer>
+<checkbox> White Rice (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Eggs (12, Large Size) <numerical input field with up and down arrows - integer>
+<checkbox> Local Cheese (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Chicken Fillets (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Beef Round or Equivalent Back Leg Red Meat (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Apples (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Bananas (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Oranges (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Tomatoes (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Potatoes (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Onions (1 kg) <numerical input field with up and down arrows - integer>
+<checkbox> Lettuce (1 Head) <numerical input field with up and down arrows - integer>
+<checkbox> Bottled Water (1.5 Liter) <numerical input field with up and down arrows - integer>
+<checkbox> Bottle of Wine (Mid-Range) <numerical input field with up and down arrows - integer>
+<checkbox> Domestic Beer (0.5 Liter Bottle) <numerical input field with up and down arrows - integer>
+<checkbox> Imported Beer (0.33 Liter Bottle) <numerical input field with up and down arrows - integer>
+<checkbox> Cigarettes (Pack of 20, Marlboro) <numerical input field with up and down arrows - integer>
+<checkbox> Transportation <numerical input field with up and down arrows - integer>
+<checkbox> One-Way Ticket (Local Transport) <numerical input field with up and down arrows - integer>
+<checkbox> Monthly Public Transport Pass (Regular Price) <numerical input field with up and down arrows - integer>
+<checkbox> Taxi Start (Standard Tariff) <numerical input field with up and down arrows - integer>
+<checkbox> Taxi 1 km (Standard Tariff) <numerical input field with up and down arrows - integer>
+<checkbox> Taxi 1 Hour Waiting (Standard Tariff) <numerical input field with up and down arrows - integer>
+<checkbox> Gasoline (1 Liter) <numerical input field with up and down arrows - integer>
+<checkbox> Volkswagen Golf 1.5 (or Equivalent New Compact Car) <numerical input field with up and down arrows - integer>
+<checkbox> Toyota Corolla Sedan 1.6 (or Equivalent New Mid-Size Car) <numerical input field with up and down arrows - integer>
+
+
+Category: Utilities (Monthly)
+<checkbox> Basic Utilities for 85 m2Apartment (Electricity, Heating, Cooling, Water, Garbage) <numerical input field with up and down arrows - integer>
+<checkbox> Mobile Phone Plan (Monthly, with Calls and 10GB+ Data) <numerical input field with up and down arrows - integer>
+<checkbox> Broadband Internet (Unlimited Data, 60 Mbps or Higher) <numerical input field with up and down arrows - integer>
+<checkbox> Sports And Leisure <numerical input field with up and down arrows - integer>
+<checkbox> Monthly Fitness Club Membership <numerical input field with up and down arrows - integer>
+<checkbox> Tennis Court Rental (1 Hour, Weekend) <numerical input field with up and down arrows - integer>
+<checkbox> Cinema Ticket (International Release) <numerical input field with up and down arrows - integer>
+<checkbox> Childcare <numerical input field with up and down arrows - integer>
+<checkbox> Private Full-Day Preschool or Kindergarten, Monthly Fee per Child <numerical input field with up and down arrows - integer>
+<checkbox> International Primary School, Annual Tuition per Child <numerical input field with up and down arrows - integer>
+<checkbox> Clothing And Shoes <numerical input field with up and down arrows - integer>
+<checkbox> Jeans (Levi's 501 or Similar) <numerical input field with up and down arrows - integer>
+<checkbox> Summer Dress in a Chain Store (e.g. Zara or H&M) <numerical input field with up and down arrows - integer>
+<checkbox> Nike Running Shoes (Mid-Range) <numerical input field with up and down arrows - integer>
+<checkbox> Men's Leather Business Shoes <numerical input field with up and down arrows - integer>
+
+Category: Housing
+<checkbox> 1 Bedroom Apartment in City Centre <numerical input field with up and down arrows - integer>
+<checkbox> 1 Bedroom Apartment Outside of City Centre <numerical input field with up and down arrows - integer>
+<checkbox> 3 Bedroom Apartment in City Centre <numerical input field with up and down arrows - integer>
+<checkbox> 3 Bedroom Apartment Outside of City Centre <numerical input field with up and down arrows - integer>
+<checkbox> Buy Apartment Price <numerical input field with up and down arrows - integer>
+<checkbox> Price per Square Meter to Buy Apartment in City Centre <numerical input field with up and down arrows - integer>
+<checkbox> Price per Square Meter to Buy Apartment Outside of Centre <numerical input field with up and down arrows - integer>
+<checkbox> Salaries And Financing <numerical input field with up and down arrows - integer>
+<checkbox> Average Monthly Net Salary (After Tax) <numerical input field with up and down arrows - integer>
+<checkbox> Annual Mortgage Interest Rate (20-Year Fixed, in %) <numerical input field with up and down arrows - integer>
+---------------------------------------------
+
+Rules for displaying data and using data:
+
+Rule 1: If a city has never been searched before by an user, then the data needs to be scraped.
+Rule 2: If a city has already been searched, it's dataframes must be stored locally for faster execution when comparing cost of living between capabilities or generating reports on the fly;
+Rule 3: If a city has already been searched, data can only be updated if user manually updated the data by clicking "Refresh" button in report.html
+Rule 4: If a city has been searched within 7 days from today - mark it with a tag: "Fresh Data"
+Rule 5: If a city has been searched in between 7 and 30 days from today - mark it with a tag "Fresh Data" Last time updated mmm/dd/yyyy (example: jan/01/2026) - N days ago
+Rule 6: If a city has been searched for more than 30 days - mark it with a yellow tag: "Caution" This data has more than 30 days and we suggest clicking Refresh button to be up to date with the latest prices
+Rule 7: If a city has been searched for more than 90 days - mark it with a red tag: "Attention - last time updated more than 3 months ago. Please click Refresh button to update the data for this city"
+

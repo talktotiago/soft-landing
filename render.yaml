@@ -4,8 +4,16 @@ services:
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 1
     envVars:
       - key: SECRET_KEY
         generateValue: true
       - key: YOUTUBE_API_KEY
         value: ""
+      - key: DB_PATH
+        value: /data/soft_landing.db
+      - key: CACHE_DIR
+        value: /data/city_reports

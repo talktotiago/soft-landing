@@ -45,6 +45,10 @@
 
   {% if comparison %}
 
+  <!-- Inject comparison data for JS calculator projection -->
+  <script id="compareData" type="application/json">{{ comparison | tojson }}</script>
+  <script id="calcServerData" type="application/json">{{ calculator_data | tojson }}</script>
+
   <!-- Cost category comparison -->
   {% set cities_list = comparison.keys() | list %}
   {% set all_cats = [] %}
@@ -56,39 +60,46 @@
 
   <!-- Key Insights -->
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white border-0 pt-3">
-      <h6 class="fw-bold"><i class="bi bi-lightbulb text-warning me-2"></i>Key Insights</h6>
+    <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#keyInsights" aria-expanded="true">
+      <h6 class="fw-bold mb-0"><i class="bi bi-lightbulb text-warning me-2"></i>Key Insights</h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
     </div>
-    <div class="card-body pb-3">
-      <ul class="list-unstyled mb-0">
-        {% if most_affordable_city %}
-        <li class="mb-2">
-          <i class="bi bi-trophy-fill text-success me-2"></i>
-          <strong>The most affordable city is:</strong> {{ most_affordable_city }}
-        </li>
-        {% endif %}
-        {% if cheapest_restaurants_city %}
-        <li class="mb-2">
-          <i class="bi bi-egg-fried text-danger me-2"></i>
-          <strong>The city with the cheapest restaurants is:</strong> {{ cheapest_restaurants_city }}
-        </li>
-        {% endif %}
-        {% if cheapest_markets_city %}
-        <li>
-          <i class="bi bi-basket2 text-success me-2"></i>
-          <strong>The city with the cheapest markets is:</strong> {{ cheapest_markets_city }}
-        </li>
-        {% endif %}
-      </ul>
+    <div id="keyInsights" class="collapse show">
+      <div class="card-body pb-3">
+        <ul class="list-unstyled mb-0">
+          {% if most_affordable_city %}
+          <li class="mb-2">
+            <i class="bi bi-trophy-fill text-success me-2"></i>
+            <strong>The most affordable city is:</strong> {{ most_affordable_city }}
+          </li>
+          {% endif %}
+          {% if cheapest_restaurants_city %}
+          <li class="mb-2">
+            <i class="bi bi-egg-fried text-danger me-2"></i>
+            <strong>The city with the cheapest restaurants is:</strong> {{ cheapest_restaurants_city }}
+          </li>
+          {% endif %}
+          {% if cheapest_markets_city %}
+          <li>
+            <i class="bi bi-basket2 text-success me-2"></i>
+            <strong>The city with the cheapest markets is:</strong> {{ cheapest_markets_city }}
+          </li>
+          {% endif %}
+        </ul>
+      </div>
     </div>
   </div>
 
+  <!-- Calculator Cost Projection (built by JS from server data / localStorage) -->
+  <div id="calcProjectionCard" class="mb-4"></div>
+
   <!-- Budget vs Salary Chart -->
   {% set cities_sorted = [] %}
-  {% if least_affordable_rank > 0 %}
-    {% for rn in range(1, least_affordable_rank + 1) %}
+  {% if calc_projection_rank_max > 0 %}
+    {% for rn in range(1, calc_projection_rank_max + 1) %}
       {% for city in comparison %}
-        {% if affordability_rank.get(city, 0) == rn and city not in cities_sorted %}
+        {% if calc_projection_rank.get(city, 0) == rn and city not in cities_sorted %}
           {% set _ = cities_sorted.append(city) %}
         {% endif %}
       {% endfor %}
@@ -103,137 +114,152 @@
   {% set chart_colors = [] %}
   {% set chart_rank_labels = [] %}
   {% for city in cities_sorted %}
-    {% set rank = affordability_rank.get(city, 0) %}
+    {% set rank = calc_projection_rank.get(city, 0) %}
+    {% set sal = city_salaries.get(city, 0) %}
     {% set _ = chart_cities.append(city) %}
-    {% set _ = chart_salaries.append(city_salaries.get(city, 0)) %}
-    {% if rank == 0 %}
+    {% set _ = chart_salaries.append(sal) %}
+    {# Green if salary < budget (user's budget goes further), red if salary > budget #}
+    {% if budget_total > 0 and sal > 0 %}
+      {% if sal < budget_total %}
+        {% set _ = chart_colors.append('#2e7d32') %}
+      {% else %}
+        {% set _ = chart_colors.append('#d32f2f') %}
+      {% endif %}
+    {% else %}
       {% set _ = chart_colors.append('#546e7a') %}
+    {% endif %}
+    {# Rank label based on cost projection rank #}
+    {% if rank == 0 %}
       {% set _ = chart_rank_labels.append('') %}
-    {% elif rank == least_affordable_rank and least_affordable_rank > 1 %}
-      {% set _ = chart_colors.append('#d32f2f') %}
+    {% elif rank == calc_projection_rank_max and calc_projection_rank_max > 1 %}
       {% set _ = chart_rank_labels.append('Least Affordable') %}
     {% elif rank == 1 %}
-      {% set _ = chart_colors.append('#1b5e20') %}
-      {% set _ = chart_rank_labels.append('1st Most Affordable') %}
+      {% set _ = chart_rank_labels.append('1st') %}
     {% elif rank == 2 %}
-      {% set _ = chart_colors.append('#2e7d32') %}
       {% set _ = chart_rank_labels.append('2nd') %}
     {% elif rank == 3 %}
-      {% set _ = chart_colors.append('#388e3c') %}
       {% set _ = chart_rank_labels.append('3rd') %}
-    {% elif rank == 4 %}
-      {% set _ = chart_colors.append('#4caf50') %}
-      {% set _ = chart_rank_labels.append('4th') %}
     {% else %}
-      {% set _ = chart_colors.append('#81c784') %}
       {% set _ = chart_rank_labels.append(rank ~ 'th') %}
     {% endif %}
   {% endfor %}
 
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-white border-0 pt-3">
-      <h6 class="fw-bold"><i class="bi bi-bar-chart-fill text-primary me-2"></i>How your budget compares with the local salary after taxes</h6>
+    <div class="card-header bg-white border-0 pt-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#salaryChartSection" aria-expanded="true">
+      <h6 class="fw-bold mb-0"><i class="bi bi-bar-chart-fill text-primary me-2"></i>How your budget compares with the local salary after taxes</h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
     </div>
-    <div class="card-body">
-      {% if budget_total == 0 %}
-      <div class="alert alert-light border small mb-3">
-        <i class="bi bi-info-circle me-2"></i>
-        Set <strong>Your Monthly Budget</strong> in <a href="{{ url_for('profile') }}">Profile Settings</a> to see it on this chart.
+    <div id="salaryChartSection" class="collapse show">
+      <div class="card-body">
+        {% if budget_total == 0 %}
+        <div class="alert alert-light border small mb-3">
+          <i class="bi bi-info-circle me-2"></i>
+          Set <strong>Your Monthly Budget</strong> in <a href="{{ url_for('profile') }}">Profile Settings</a> to see it on this chart.
+        </div>
+        {% endif %}
+        <script id="salaryChartData" type="application/json">
+        {
+          "cities": {{ chart_cities | tojson }},
+          "salaries": {{ chart_salaries | tojson }},
+          "colors": {{ chart_colors | tojson }},
+          "rankLabels": {{ chart_rank_labels | tojson }},
+          "budget": {{ budget_total | tojson }},
+          "currency": {{ profile_currency | tojson }}
+        }
+        </script>
+        <canvas id="salaryChart" style="max-height:340px"></canvas>
       </div>
-      {% endif %}
-      <script id="salaryChartData" type="application/json">
-      {
-        "cities": {{ chart_cities | tojson }},
-        "salaries": {{ chart_salaries | tojson }},
-        "colors": {{ chart_colors | tojson }},
-        "rankLabels": {{ chart_rank_labels | tojson }},
-        "budget": {{ budget_total | tojson }},
-        "currency": {{ profile_currency | tojson }}
-      }
-      </script>
-      <canvas id="salaryChart"></canvas>
     </div>
   </div>
 
-  <!-- Detailed item comparison -->
+  <!-- Detailed item comparison by category -->
   {% for cat in all_cats %}
+  {% set collapse_id = 'cmp-cat-' ~ loop.index %}
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-header bg-light border-0">
+    <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#{{ collapse_id }}" aria-expanded="true">
       <h6 class="fw-bold mb-0">{{ cat }}</h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
     </div>
-    <div class="card-body p-0">
-      {% set all_items = [] %}
-      {% for city, d in comparison.items() %}
-        {% if cat in d.categories %}
-          {% for item in d.categories[cat] %}
-            {% if item.name not in all_items %}{% set _ = all_items.append(item.name) %}{% endif %}
-          {% endfor %}
-        {% endif %}
-      {% endfor %}
+    <div id="{{ collapse_id }}" class="collapse show">
+      <div class="card-body p-0">
+        {% set all_items = [] %}
+        {% for city, d in comparison.items() %}
+          {% if cat in d.categories %}
+            {% for item in d.categories[cat] %}
+              {% if item.name not in all_items %}{% set _ = all_items.append(item.name) %}{% endif %}
+            {% endfor %}
+          {% endif %}
+        {% endfor %}
 
-      <div class="table-responsive">
-        <table class="table table-sm table-hover align-middle mb-0">
-          <thead class="table-light">
-            <tr>
-              <th>Item</th>
-              {% for city in cities_list %}
-              {% set rank = affordability_rank.get(city, 0) %}
-              <th class="text-center small">
-                {{ city }}
-                {% if rank == 1 %}
-                  <br><span class="badge text-bg-success mt-1" style="font-size:.6rem;">1st</span>
-                {% elif rank == 2 and rank < least_affordable_rank %}
-                  <br><span class="badge mt-1" style="font-size:.6rem;background:#4caf50;color:#fff;">2nd</span>
-                {% elif rank == 3 and rank < least_affordable_rank %}
-                  <br><span class="badge mt-1" style="font-size:.6rem;background:#81c784;color:#1b5e20;">3rd</span>
-                {% endif %}
-                {% if rank == least_affordable_rank and least_affordable_rank > 1 and rank != 1 %}
-                  <br><span class="badge text-bg-danger mt-1" style="font-size:.6rem;">least</span>
-                {% endif %}
-              </th>
-              {% endfor %}
-            </tr>
-          </thead>
-          <tbody>
-            {% for item_name in all_items %}
-            {% set ns = namespace(prices=[]) %}
-            {% for city in cities_list %}
-              {% set d = comparison[city] %}
-              {% if cat in d.categories %}
-                {% for it in d.categories[cat] %}
-                  {% if it.name == item_name and it.price %}{% set ns.prices = ns.prices + [it.price] %}{% endif %}
+        <div class="table-responsive">
+          <table class="table table-sm table-hover align-middle mb-0">
+            <thead class="table-light">
+              <tr>
+                <th>Item</th>
+                {% for city in cities_list %}
+                {% set rank = calc_projection_rank.get(city, 0) %}
+                <th class="text-center small">
+                  {{ city }}
+                  {% if rank > 0 %}
+                    {% if rank == calc_projection_rank_max and calc_projection_rank_max > 1 %}
+                      <br><span class="badge text-bg-danger mt-1" style="font-size:.6rem">Least Affordable</span>
+                    {% elif rank == 1 %}
+                      <br><span class="badge text-bg-success mt-1" style="font-size:.6rem">1st</span>
+                    {% elif rank == 2 %}
+                      <br><span class="badge text-bg-info mt-1" style="font-size:.6rem">2nd</span>
+                    {% elif rank == 3 %}
+                      <br><span class="badge text-bg-warning text-dark mt-1" style="font-size:.6rem">3rd</span>
+                    {% else %}
+                      <br><span class="badge text-bg-secondary mt-1" style="font-size:.6rem">{{ rank }}th</span>
+                    {% endif %}
+                  {% endif %}
+                </th>
                 {% endfor %}
-              {% endif %}
-            {% endfor %}
-            {% set row_min = ns.prices | min if ns.prices | length > 1 else none %}
-            {% set row_max = ns.prices | max if ns.prices | length > 1 else none %}
-            <tr>
-              <td class="small">{{ item_name }}</td>
+              </tr>
+            </thead>
+            <tbody>
+              {% for item_name in all_items %}
+              {% set ns = namespace(prices=[]) %}
               {% for city in cities_list %}
-              {% set d = comparison[city] %}
-              {% set found = namespace(price=none) %}
-              {% if cat in d.categories %}
-                {% for it in d.categories[cat] %}
-                  {% if it.name == item_name %}{% set found.price = it.price %}{% endif %}
-                {% endfor %}
-              {% endif %}
-              {% set bg = '' %}
-              {% if found.price is not none and row_min is not none %}
-                {% if found.price == row_min %}{% set bg = 'table-success' %}{% endif %}
-                {% if found.price == row_max and row_max != row_min %}{% set bg = 'table-danger' %}{% endif %}
-              {% endif %}
-              <td class="text-center small fw-semibold {{ bg }}">
-                {% if found.price is not none %}
-                  {{ d.currency }} {{ '{:,.2f}'.format(found.price) }}
-                {% else %}
-                  <span class="text-muted fw-normal">—</span>
+                {% set d = comparison[city] %}
+                {% if cat in d.categories %}
+                  {% for it in d.categories[cat] %}
+                    {% if it.name == item_name and it.price %}{% set ns.prices = ns.prices + [it.price] %}{% endif %}
+                  {% endfor %}
                 {% endif %}
-              </td>
               {% endfor %}
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+              {% set row_min = ns.prices | min if ns.prices | length > 1 else none %}
+              {% set row_max = ns.prices | max if ns.prices | length > 1 else none %}
+              <tr>
+                <td class="small">{{ item_name }}</td>
+                {% for city in cities_list %}
+                {% set d = comparison[city] %}
+                {% set found = namespace(price=none) %}
+                {% if cat in d.categories %}
+                  {% for it in d.categories[cat] %}
+                    {% if it.name == item_name %}{% set found.price = it.price %}{% endif %}
+                  {% endfor %}
+                {% endif %}
+                {% set bg = '' %}
+                {% if found.price is not none and row_min is not none %}
+                  {% if found.price == row_min %}{% set bg = 'table-success' %}{% endif %}
+                  {% if found.price == row_max and row_max != row_min %}{% set bg = 'table-danger' %}{% endif %}
+                {% endif %}
+                <td class="text-center small fw-semibold {{ bg }}">
+                  {% if found.price is not none %}
+                    {{ d.currency }} {{ '{:,.2f}'.format(found.price) }}
+                  {% else %}
+                    <span class="text-muted fw-normal">—</span>
+                  {% endif %}
+                </td>
+                {% endfor %}
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -268,6 +294,198 @@ document.getElementById('compareForm').addEventListener('submit', function () {
   btn.disabled = true;
   btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" role="status"></span>Loading…';
 });
+</script>
+
+<script>
+(function () {
+  var container = document.getElementById('calcProjectionCard');
+  if (!container) return;
+
+  var serverCalc = JSON.parse((document.getElementById('calcServerData') || {}).textContent || '{}');
+  var calcData = Object.keys(serverCalc).length
+    ? serverCalc
+    : JSON.parse(localStorage.getItem('softlanding_calc_v1') || '{}');
+
+  var compareEl = document.getElementById('compareData');
+  if (!compareEl) return;
+  var comparison = JSON.parse(compareEl.textContent);
+  var cities = Object.keys(comparison);
+
+  if (!Object.keys(calcData).length) {
+    container.innerHTML =
+      '<div class="card border-0 shadow-sm mb-4"><div class="card-body">' +
+      '<p class="text-muted small mb-0"><i class="bi bi-info-circle me-2"></i>' +
+      'No calculator data found. <a href="/profile">Set up your Monthly Expenses Calculator</a> ' +
+      'to see cost projections across cities.</p></div></div>';
+    return;
+  }
+
+  function normName(s) {
+    return s.replace(/²/g, '2').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  var cityLookup = {};
+  var itemCategory = {};
+  cities.forEach(function (city) {
+    cityLookup[city] = {};
+    Object.entries(comparison[city].categories || {}).forEach(function ([cat, items]) {
+      items.forEach(function (item) {
+        if (item.price) {
+          var key = normName(item.name);
+          cityLookup[city][key] = item.price;
+          if (!itemCategory[key]) itemCategory[key] = cat;
+        }
+      });
+    });
+  });
+
+  var rows = [];
+  Object.entries(calcData).forEach(function ([name, qty]) {
+    var key = normName(name);
+    var cityPrices = {};
+    cities.forEach(function (city) {
+      var price = cityLookup[city][key];
+      if (price) cityPrices[city] = price * qty;
+    });
+    if (Object.keys(cityPrices).length) {
+      rows.push({ name: name, qty: qty, category: itemCategory[key] || 'Other', cityPrices: cityPrices });
+    }
+  });
+
+  if (!rows.length) {
+    container.innerHTML =
+      '<div class="card border-0 shadow-sm mb-4"><div class="card-body">' +
+      '<p class="text-muted small mb-0">None of your calculator items were found in the selected cities\' data.</p>' +
+      '</div></div>';
+    return;
+  }
+
+  var totals = {};
+  cities.forEach(function (city) { totals[city] = 0; });
+  rows.forEach(function (row) {
+    cities.forEach(function (city) {
+      if (row.cityPrices[city]) totals[city] += row.cityPrices[city];
+    });
+  });
+
+  var sortedCities = cities.slice().sort(function (a, b) {
+    return (totals[a] || Infinity) - (totals[b] || Infinity);
+  });
+  var ranks = {};
+  sortedCities.forEach(function (city, i) { ranks[city] = i + 1; });
+  var maxRank = sortedCities.length;
+
+  var currencies = {};
+  cities.forEach(function (city) { currencies[city] = comparison[city].currency || ''; });
+
+  function fmt(v, currency) {
+    return currency + ' ' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function rankBadge(rank) {
+    if (maxRank === 1) return '';
+    if (rank === maxRank) {
+      return '<br><span class="badge text-bg-danger mt-1" style="font-size:.6rem">Least Affordable</span>';
+    }
+    var suffixes = ['', 'st', 'nd', 'rd'];
+    var suffix = rank <= 3 ? suffixes[rank] : 'th';
+    var colorMap = { 1: 'success', 2: 'info', 3: 'warning' };
+    var extraClass = rank === 3 ? ' text-dark' : '';
+    var color = colorMap[rank] || 'secondary';
+    return '<br><span class="badge text-bg-' + color + extraClass + ' mt-1" style="font-size:.6rem">' + rank + suffix + '</span>';
+  }
+
+  var headerCells = sortedCities.map(function (city) {
+    return '<th class="text-center small">' + city + rankBadge(ranks[city]) + '</th>';
+  }).join('');
+
+  var catOrder = ['Restaurants', 'Markets', 'Transportation', 'Utilities (Monthly)',
+    'Sports And Leisure', 'Childcare', 'Clothing And Shoes', 'Rent Per Month',
+    'Buy Apartment Price', 'Salaries And Financing'];
+  var catIcons = {
+    'Restaurants': 'bi-egg-fried', 'Markets': 'bi-basket2',
+    'Transportation': 'bi-bus-front', 'Utilities (Monthly)': 'bi-lightning-charge',
+    'Sports And Leisure': 'bi-bicycle', 'Childcare': 'bi-people',
+    'Clothing And Shoes': 'bi-bag', 'Rent Per Month': 'bi-house',
+    'Buy Apartment Price': 'bi-building', 'Salaries And Financing': 'bi-cash-stack'
+  };
+  var catColors = {
+    'Restaurants': 'danger', 'Markets': 'success', 'Transportation': 'primary',
+    'Utilities (Monthly)': 'warning', 'Sports And Leisure': 'info',
+    'Childcare': 'secondary', 'Clothing And Shoes': 'secondary',
+    'Rent Per Month': 'dark', 'Buy Apartment Price': 'dark',
+    'Salaries And Financing': 'success'
+  };
+
+  var byCategory = {};
+  rows.forEach(function (row) {
+    if (!byCategory[row.category]) byCategory[row.category] = [];
+    byCategory[row.category].push(row);
+  });
+  var orderedCats = catOrder.filter(function (c) { return byCategory[c]; });
+  Object.keys(byCategory).forEach(function (c) {
+    if (orderedCats.indexOf(c) === -1) orderedCats.push(c);
+  });
+
+  var colspan = 2 + sortedCities.length;
+  var bodyRows = '';
+  orderedCats.forEach(function (cat) {
+    var catRows = byCategory[cat];
+    var icon = catIcons[cat] || 'bi-tag';
+    var color = catColors[cat] || 'secondary';
+    bodyRows +=
+      '<tr class="table-light">' +
+      '<td colspan="' + colspan + '" class="fw-semibold small ps-3 py-2 text-' + color + '">' +
+      '<i class="bi ' + icon + ' me-1"></i>' + cat + '</td></tr>';
+    catRows.forEach(function (row) {
+      var prices = sortedCities.map(function (city) { return row.cityPrices[city]; }).filter(function (p) { return p != null; });
+      var minP = prices.length > 1 ? Math.min.apply(null, prices) : null;
+      var maxP = prices.length > 1 ? Math.max.apply(null, prices) : null;
+      var cells = sortedCities.map(function (city) {
+        var p = row.cityPrices[city];
+        var cls = '';
+        if (p != null && minP != null) {
+          if (p === minP) cls = 'table-success';
+          else if (p === maxP && maxP !== minP) cls = 'table-danger';
+        }
+        return '<td class="text-center fw-semibold ' + cls + '" style="font-size:.78rem">' +
+          (p != null ? fmt(p, currencies[city]) : '<span class="text-muted fw-normal">—</span>') +
+          '</td>';
+      }).join('');
+      bodyRows +=
+        '<tr><td class="ps-3" style="font-size:.78rem">' + row.name + '</td>' +
+        '<td class="text-center text-muted" style="font-size:.78rem">&times;' + row.qty + '</td>' +
+        cells + '</tr>';
+    });
+  });
+
+  var footerCells = sortedCities.map(function (city) {
+    var t = totals[city];
+    var isMin = ranks[city] === 1;
+    var isMax = ranks[city] === maxRank && maxRank > 1;
+    var cls = isMin ? 'text-success' : (isMax ? 'text-danger' : '');
+    return '<td class="text-center fw-bold ' + cls + '" style="font-size:.78rem">' + (t > 0 ? fmt(t, currencies[city]) : '—') + '</td>';
+  }).join('');
+
+  container.innerHTML =
+    '<div class="card border-0 shadow-sm mb-4">' +
+    '<div class="card-header bg-info-subtle border-0 d-flex justify-content-between align-items-center" style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#calcProjectionBody" aria-expanded="true">' +
+    '<h6 class="fw-bold mb-0"><i class="bi bi-calculator me-2 text-info"></i>Your Estimated Monthly Cost Projection</h6>' +
+    '<i class="bi bi-chevron-down collapse-icon text-muted"></i>' +
+    '</div>' +
+    '<div id="calcProjectionBody" class="collapse show">' +
+    '<div class="card-body p-0">' +
+    '<div class="table-responsive">' +
+    '<table class="table table-sm table-hover align-middle mb-0" style="font-size:.78rem">' +
+    '<thead class="table-light"><tr>' +
+    '<th class="ps-3">Item</th><th class="text-center" style="width:3.5rem">Qty</th>' +
+    headerCells + '</tr></thead>' +
+    '<tbody>' + bodyRows + '</tbody>' +
+    '<tfoot class="table-dark fw-semibold">' +
+    '<tr><td class="ps-3" style="font-size:.78rem">Estimated Total / month</td><td></td>' + footerCells + '</tr>' +
+    '</tfoot>' +
+    '</table></div></div></div></div>';
+})();
 </script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script>
@@ -308,6 +526,8 @@ document.getElementById('compareForm').addEventListener('submit', function () {
     },
     options: {
       responsive: true,
+      maintainAspectRatio: true,
+      aspectRatio: 2.5,
       plugins: {
         legend: { position: 'top' },
         tooltip: {

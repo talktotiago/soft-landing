@@ -1,0 +1,35 @@
+This is a feedback based on ongoing tests of the code delivered by Claude. 
+New Feedback:
+The app is working almost as expected, but there's an inconvenience with the search. Sometimes the term used in the app doesn't match with what is sourced in numbeo, breaking the flow and faiing in retrieve the data from numbeo as a source. For that, I found out that you can make requests using 
+_________________________________________________________________________________________________
+The current version presented by Claude is almost near to completion, however, some points of concern needs to be addressed. 
+1. When I go to a report or compare cities, it takes substantial time for pages to load. 
+To solve that:
+1. When a user searches for a city:
+a) that city creates a json object with the data sourced
+b) if that city has never been searched before, then it must create it's own HTML report for faster loading - add a timestamp at the bottom of the page: "Last time updated in source dd/mm/yyyy"
+c) flag the data in the report based on the "last time updated in source" timestamp based on the rules: "Fresh data" - data that was sourced from today to 30 days forward, "Consider refresh" - data that was sourced in between 30 days and 90 days from today, "Old data - refresh recommended" - data sourced with more than 90 days from today 
+1. Every city in history needs to have its own page in html for faster loading and a timestamp from last time data was updated from source. 
+2. Requests to scrap data from numbeo must only occur when: 
+ a) a city was never searched before
+ b) user clicks "Refresh" button in reports page UI
+3. Data from profile.html must also be converted in json for calculations and faster execution
+4. Reports Page: "Monthly Expenses Prevision" table - Change the position to come right after "Budget vs Local Salary"
+5. "Montlhy Expenses Prevision" table must also be added to the json file for faster retrievel when comparing the cost of living between towns
+6. Youtube videos: remove the sidebar and add the videos at the bottom of the page with the videos showing in 3 different columns per category. 
+7. Make all tables collapsible (open by default)
+8. compare.html - tables needs improvements:
+Table: "Your Estimated Monthly Cost Projection" - the font is too big, reduce it more
+Tables: "Restaurants", "Markets", "Transportation", "Utilities (Monthly)", "Sports and Leisure", "Childcare", "Clothing and Shoes", "Rent Per Month", "Buy Apartment Price", "Salaries And Financing" - rankings needs to be from 1st, 2nd, 3rd, and only the most expansive city in that category must be labeled as "least affordable" 
+Graphic: "How your budget compares with the local salary after taxes" - The graphic is a bit too big. Ranking must also be "1st", "2nd" and so on, and only the last city in the ranking must have the label "least affordable"
+Paint the bar red for any city whose local salaries are above user budget. 
+
+-------------------------
+Road Map
+0. compare.html, in the graphic table: How your budget compares with the local salary after taxes needs to change as following:
+ - a) ranking must be which budget is the highest in comparison with Average Monthly Net Salary (After Tax)
+ - b) if "Average Monthly Net Salary (After Tax)" < My Monthly Budget, then set bar for "Average Monthly Net Salary (After Tax)" in green. Else, red. 
+1. Implement two fields in profile:
+City with nearest international airport:
+2. Dates which you plan to travel (auto-increment field)
+3. Implement Amadeus API for searching price flights which will be shown at the report.html page for each city. 

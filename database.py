@@ -3,7 +3,7 @@ import json
 import os
 from datetime import datetime
 
-DB_PATH = os.path.join(os.path.dirname(__file__), 'soft_landing.db')
+DB_PATH = os.environ.get('DB_PATH', os.path.join(os.path.dirname(__file__), 'soft_landing.db'))
 
 
 def get_db():
@@ -49,6 +49,20 @@ def init_db():
         cursor.execute('ALTER TABLE profile ADD COLUMN budget REAL DEFAULT 0')
     except Exception:
         pass
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS youtube_cache (
+            city_name TEXT PRIMARY KEY,
+            data TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS calculator_data (
+            id INTEGER PRIMARY KEY DEFAULT 1,
+            data TEXT NOT NULL DEFAULT '{}',
+            updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -98,6 +112,42 @@ def get_report(city_name):
         conn.close()
 
 
+def get_report_age(city_name):
+    conn = get_db()
+    try:
+        row = conn.execute(
+            'SELECT created_at FROM city_reports WHERE LOWER(city_name) = LOWER(?)',
+            (city_name,)
+        ).fetchone()
+        return row['created_at'] if row else None
+    finally:
+        conn.close()
+
+
+def save_youtube_cache(city_name, data):
+    conn = get_db()
+    try:
+        conn.execute(
+            'INSERT OR REPLACE INTO youtube_cache (city_name, data, created_at) VALUES (?, ?, ?)',
+            (city_name, json.dumps(data), datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_youtube_cache(city_name):
+    conn = get_db()
+    try:
+        row = conn.execute(
+            'SELECT data FROM youtube_cache WHERE LOWER(city_name) = LOWER(?)',
+            (city_name,)
+        ).fetchone()
+        return json.loads(row['data']) if row else None
+    finally:
+        conn.close()
+
+
 def get_all_reports(limit=None):
     conn = get_db()
     try:
@@ -114,6 +164,27 @@ def delete_report(report_id):
     try:
         conn.execute('DELETE FROM city_reports WHERE id = ?', (report_id,))
         conn.commit()
+    finally:
+        conn.close()
+
+
+def save_calculator_data(data: dict):
+    conn = get_db()
+    try:
+        conn.execute(
+            'INSERT OR REPLACE INTO calculator_data (id, data, updated_at) VALUES (1, ?, ?)',
+            (json.dumps(data), datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def get_calculator_data() -> dict:
+    conn = get_db()
+    try:
+        row = conn.execute('SELECT data FROM calculator_data WHERE id = 1').fetchone()
+        return json.loads(row['data']) if row else {}
     finally:
         conn.close()
 

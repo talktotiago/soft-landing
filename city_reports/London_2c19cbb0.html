@@ -1,0 +1,1324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>London — Soft Landing</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+  <link rel="stylesheet" href="/static/css/style.css">
+  
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top shadow-sm">
+  <div class="container">
+    <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="/">
+      <i class="bi bi-airplane-fill text-warning"></i>
+      Soft Landing
+    </a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+      <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav ms-auto gap-1">
+        <li class="nav-item">
+          <a class="nav-link " href="/">
+            <i class="bi bi-search me-1"></i>Search
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link " href="/history">
+            <i class="bi bi-clock-history me-1"></i>History
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link " href="/compare">
+            <i class="bi bi-bar-chart-line me-1"></i>Compare
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link " href="/profile">
+            <i class="bi bi-person-circle me-1"></i>Profile
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+<!-- Flash messages -->
+<div class="container mt-5 pt-4">
+  
+    
+  
+</div>
+
+<!-- Page content -->
+
+<div class="container mt-5 pt-4">
+
+  <!-- Header -->
+  <div class="report-header p-4 rounded-3 mb-4 shadow-sm d-flex flex-wrap justify-content-between align-items-start gap-3">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1 small">
+          <li class="breadcrumb-item"><a href="/">Home</a></li>
+          
+          <li class="breadcrumb-item">
+            <span class="me-1">🇬🇧</span>United Kingdom
+          </li>
+          
+          <li class="breadcrumb-item active">London</li>
+        </ol>
+      </nav>
+      <h2 class="fw-bold mb-1">
+        <i class="bi bi-geo-alt-fill text-danger me-2"></i>London<span class="text-muted fs-5 fw-normal">, United Kingdom</span>
+      </h2>
+      
+        <span class="badge bg-success freshness-badge" data-cached-at="2026-05-02 21:06:43"><i class="bi bi-check-circle-fill me-1"></i>Fresh data</span>
+      
+      <span class="badge bg-dark ms-1">R$</span>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+      <a href="/report/London?refresh=1" class="btn btn-outline-primary btn-sm">
+        <i class="bi bi-arrow-clockwise me-1"></i>Refresh
+      </a>
+      <a href="/compare?city=London" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-bar-chart-line me-1"></i>Compare
+      </a>
+      <a href="/history" class="btn btn-outline-dark btn-sm">
+        <i class="bi bi-clock-history me-1"></i>History
+      </a>
+    </div>
+  </div>
+
+  <!-- Budget vs Local Salary -->
+  
+  
+    
+      
+    
+      
+    
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#budgetSection" aria-expanded="true">
+      <h6 class="fw-bold mb-0"><i class="bi bi-wallet2 text-primary me-2"></i>Budget vs Local Salary</h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="budgetSection" class="collapse show">
+      <div class="card-body">
+        
+        <div class="alert alert-danger py-2 mb-2">
+          <i class="bi bi-arrow-down-circle-fill me-2"></i>
+          Your budget is <strong>71.2% lower</strong> than the local salary
+        </div>
+        
+        <p class="text-muted small mb-0">
+          Your Budget: <strong>R$ 7,000.00</strong>
+          &nbsp;·&nbsp;
+          Local Salary: <strong>R$ 24,334.03</strong>
+        </p>
+      </div>
+    </div>
+  </div>
+  
+
+  <!-- Monthly Expenses Prevision -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-info-subtle border-0 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#expensesSection" aria-expanded="true">
+      <h5 class="fw-bold mb-0">
+        <i class="bi bi-calculator me-2 text-info"></i>Monthly Expenses Prevision
+      </h5>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="expensesSection" class="collapse show">
+      <div class="card-body" id="expensesPreview">
+        <p class="text-muted small mb-0">
+          <span class="spinner-border spinner-border-sm me-2"></span>Calculating…
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cost Breakdown -->
+  
+  
+
+  <h5 class="fw-bold mb-3">
+    <i class="bi bi-table me-2 text-primary"></i>Cost Breakdown
+  </h5>
+
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-danger-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-1" aria-expanded="true">
+      <span class="fw-semibold text-danger">
+        <i class="bi bi-egg-fried me-2"></i>Restaurants
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-1" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Meal at an Inexpensive Restaurant" data-price="135.59">
+              <td class="small ps-3">Meal at an Inexpensive Restaurant</td>
+              <td class="text-end fw-semibold">135.59</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  101.69 – 271.17
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Meal for Two at a Mid-Range Restaurant (Three Courses, Without Drinks)" data-price="542.35">
+              <td class="small ps-3">Meal for Two at a Mid-Range Restaurant (Three Courses, Without Drinks)</td>
+              <td class="text-end fw-semibold">542.35</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  406.76 – 881.32
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Combo Meal at McDonald&#39;s (or Equivalent Fast-Food Meal)" data-price="61.01">
+              <td class="small ps-3">Combo Meal at McDonald&#39;s (or Equivalent Fast-Food Meal)</td>
+              <td class="text-end fw-semibold">61.01</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  47.46 – 67.79
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Domestic Draft Beer (0.5 Liter)" data-price="47.46">
+              <td class="small ps-3">Domestic Draft Beer (0.5 Liter)</td>
+              <td class="text-end fw-semibold">47.46</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  30.51 – 54.23
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Imported Beer (0.33 Liter Bottle)" data-price="40.68">
+              <td class="small ps-3">Imported Beer (0.33 Liter Bottle)</td>
+              <td class="text-end fw-semibold">40.68</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  30.51 – 54.23
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Cappuccino (Regular Size)" data-price="27.54">
+              <td class="small ps-3">Cappuccino (Regular Size)</td>
+              <td class="text-end fw-semibold">27.54</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  16.95 – 33.90
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Soft Drink (Coca-Cola or Pepsi, 0.33 Liter Bottle)" data-price="15.13">
+              <td class="small ps-3">Soft Drink (Coca-Cola or Pepsi, 0.33 Liter Bottle)</td>
+              <td class="text-end fw-semibold">15.13</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  10.17 – 20.34
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Bottled Water (0.33 Liter)" data-price="10.76">
+              <td class="small ps-3">Bottled Water (0.33 Liter)</td>
+              <td class="text-end fw-semibold">10.76</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  6.78 – 16.95
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-success-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-2" aria-expanded="true">
+      <span class="fw-semibold text-success">
+        <i class="bi bi-basket2 me-2"></i>Markets
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-2" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Milk (Regular, 1 Liter)" data-price="9.11">
+              <td class="small ps-3">Milk (Regular, 1 Liter)</td>
+              <td class="text-end fw-semibold">9.11</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  6.10 – 12.81
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Fresh White Bread (500 g Loaf)" data-price="11.12">
+              <td class="small ps-3">Fresh White Bread (500 g Loaf)</td>
+              <td class="text-end fw-semibold">11.12</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  5.89 – 20.34
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="White Rice (1 kg)" data-price="12.21">
+              <td class="small ps-3">White Rice (1 kg)</td>
+              <td class="text-end fw-semibold">12.21</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  8.14 – 27.12
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Eggs (12, Large Size)" data-price="25.0">
+              <td class="small ps-3">Eggs (12, Large Size)</td>
+              <td class="text-end fw-semibold">25.00</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  13.02 – 37.96
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Local Cheese (1 kg)" data-price="57.4">
+              <td class="small ps-3">Local Cheese (1 kg)</td>
+              <td class="text-end fw-semibold">57.40</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  20.34 – 135.59
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Chicken Fillets (1 kg)" data-price="49.99">
+              <td class="small ps-3">Chicken Fillets (1 kg)</td>
+              <td class="text-end fw-semibold">49.99</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  27.12 – 67.79
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Beef Round or Equivalent Back Leg Red Meat (1 kg)" data-price="88.21">
+              <td class="small ps-3">Beef Round or Equivalent Back Leg Red Meat (1 kg)</td>
+              <td class="text-end fw-semibold">88.21</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  33.90 – 149.15
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Apples (1 kg)" data-price="16.3">
+              <td class="small ps-3">Apples (1 kg)</td>
+              <td class="text-end fw-semibold">16.30</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  6.78 – 27.12
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Bananas (1 kg)" data-price="7.84">
+              <td class="small ps-3">Bananas (1 kg)</td>
+              <td class="text-end fw-semibold">7.84</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  6.10 – 16.95
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Oranges (1 kg)" data-price="14.54">
+              <td class="small ps-3">Oranges (1 kg)</td>
+              <td class="text-end fw-semibold">14.54</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  6.78 – 25.42
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Tomatoes (1 kg)" data-price="15.88">
+              <td class="small ps-3">Tomatoes (1 kg)</td>
+              <td class="text-end fw-semibold">15.88</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  6.78 – 40.68
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Potatoes (1 kg)" data-price="7.72">
+              <td class="small ps-3">Potatoes (1 kg)</td>
+              <td class="text-end fw-semibold">7.72</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  4.47 – 13.56
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Onions (1 kg)" data-price="8.66">
+              <td class="small ps-3">Onions (1 kg)</td>
+              <td class="text-end fw-semibold">8.66</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  6.71 – 13.56
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Lettuce (1 Head)" data-price="7.62">
+              <td class="small ps-3">Lettuce (1 Head)</td>
+              <td class="text-end fw-semibold">7.62</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  5.42 – 13.56
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Bottled Water (1.5 Liter)" data-price="8.6">
+              <td class="small ps-3">Bottled Water (1.5 Liter)</td>
+              <td class="text-end fw-semibold">8.60</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  5.08 – 13.56
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Bottle of Wine (Mid-Range)" data-price="67.79">
+              <td class="small ps-3">Bottle of Wine (Mid-Range)</td>
+              <td class="text-end fw-semibold">67.79</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  33.90 – 101.69
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Domestic Beer (0.5 Liter Bottle)" data-price="16.87">
+              <td class="small ps-3">Domestic Beer (0.5 Liter Bottle)</td>
+              <td class="text-end fw-semibold">16.87</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  10.17 – 27.12
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Imported Beer (0.33 Liter Bottle)" data-price="20.39">
+              <td class="small ps-3">Imported Beer (0.33 Liter Bottle)</td>
+              <td class="text-end fw-semibold">20.39</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  10.78 – 40.68
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Cigarettes (Pack of 20, Marlboro)" data-price="120.33">
+              <td class="small ps-3">Cigarettes (Pack of 20, Marlboro)</td>
+              <td class="text-end fw-semibold">120.33</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  113.89 – 135.59
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-primary-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-3" aria-expanded="true">
+      <span class="fw-semibold text-primary">
+        <i class="bi bi-bus-front me-2"></i>Transportation
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-3" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="One-Way Ticket (Local Transport)" data-price="21.69">
+              <td class="small ps-3">One-Way Ticket (Local Transport)</td>
+              <td class="text-end fw-semibold">21.69</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  18.98 – 40.68
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Monthly Public Transport Pass (Regular Price)" data-price="1355.87">
+              <td class="small ps-3">Monthly Public Transport Pass (Regular Price)</td>
+              <td class="text-end fw-semibold">1,355.87</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  1,084.70 – 1,694.84
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Taxi Start (Standard Tariff)" data-price="28.47">
+              <td class="small ps-3">Taxi Start (Standard Tariff)</td>
+              <td class="text-end fw-semibold">28.47</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  24.41 – 40.68
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Taxi 1 km (Standard Tariff)" data-price="16.95">
+              <td class="small ps-3">Taxi 1 km (Standard Tariff)</td>
+              <td class="text-end fw-semibold">16.95</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  13.56 – 27.12
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Taxi 1 Hour Waiting (Standard Tariff)" data-price="262.16">
+              <td class="small ps-3">Taxi 1 Hour Waiting (Standard Tariff)</td>
+              <td class="text-end fw-semibold">262.16</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  135.59 – 406.76
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Gasoline (1 Liter)" data-price="9.47">
+              <td class="small ps-3">Gasoline (1 Liter)</td>
+              <td class="text-end fw-semibold">9.47</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  9.02 – 10.85
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Volkswagen Golf 1.5 (or Equivalent New Compact Car)" data-price="195889.73">
+              <td class="small ps-3">Volkswagen Golf 1.5 (or Equivalent New Compact Car)</td>
+              <td class="text-end fw-semibold">195,889.73</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  185,890.16 – 203,380.92
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Toyota Corolla Sedan 1.6 (or Equivalent New Mid-Size Car)" data-price="206315.97">
+              <td class="small ps-3">Toyota Corolla Sedan 1.6 (or Equivalent New Mid-Size Car)</td>
+              <td class="text-end fw-semibold">206,315.97</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  203,380.92 – 207,753.61
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-warning-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-4" aria-expanded="true">
+      <span class="fw-semibold text-warning">
+        <i class="bi bi-lightning-charge me-2"></i>Utilities (Monthly)
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-4" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Basic Utilities for 85 m2Apartment (Electricity, Heating, Cooling, Water, Garbage)" data-price="1943.83">
+              <td class="small ps-3">Basic Utilities for 85 m2Apartment (Electricity, Heating, Cooling, Water, Garbage)</td>
+              <td class="text-end fw-semibold">1,943.83</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  1,118.60 – 3,601.54
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Mobile Phone Plan (Monthly, with Calls and 10GB+ Data)" data-price="84.34">
+              <td class="small ps-3">Mobile Phone Plan (Monthly, with Calls and 10GB+ Data)</td>
+              <td class="text-end fw-semibold">84.34</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  53.22 – 135.59
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Broadband Internet (Unlimited Data, 60 Mbps or Higher)" data-price="213.98">
+              <td class="small ps-3">Broadband Internet (Unlimited Data, 60 Mbps or Higher)</td>
+              <td class="text-end fw-semibold">213.98</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  169.48 – 271.17
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-info-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-5" aria-expanded="true">
+      <span class="fw-semibold text-info">
+        <i class="bi bi-bicycle me-2"></i>Sports And Leisure
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-5" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Monthly Fitness Club Membership" data-price="391.51">
+              <td class="small ps-3">Monthly Fitness Club Membership</td>
+              <td class="text-end fw-semibold">391.51</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  196.60 – 738.95
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Tennis Court Rental (1 Hour, Weekend)" data-price="130.5">
+              <td class="small ps-3">Tennis Court Rental (1 Hour, Weekend)</td>
+              <td class="text-end fw-semibold">130.50</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  81.35 – 203.38
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Cinema Ticket (International Release)" data-price="101.69">
+              <td class="small ps-3">Cinema Ticket (International Release)</td>
+              <td class="text-end fw-semibold">101.69</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  67.79 – 122.03
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-pink-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-6" aria-expanded="true">
+      <span class="fw-semibold text-pink">
+        <i class="bi bi-people me-2"></i>Childcare
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-6" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Private Full-Day Preschool or Kindergarten, Monthly Fee per Child" data-price="12429.15">
+              <td class="small ps-3">Private Full-Day Preschool or Kindergarten, Monthly Fee per Child</td>
+              <td class="text-end fw-semibold">12,429.15</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  8,135.24 – 16,948.41
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="International Primary School, Annual Tuition per Child" data-price="153191.35">
+              <td class="small ps-3">International Primary School, Annual Tuition per Child</td>
+              <td class="text-end fw-semibold">153,191.35</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  101,690.46 – 231,854.25
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-secondary-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-7" aria-expanded="true">
+      <span class="fw-semibold text-secondary">
+        <i class="bi bi-bag me-2"></i>Clothing And Shoes
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-7" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Jeans (Levi&#39;s 501 or Similar)" data-price="599.44">
+              <td class="small ps-3">Jeans (Levi&#39;s 501 or Similar)</td>
+              <td class="text-end fw-semibold">599.44</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  338.97 – 677.94
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Summer Dress in a Chain Store (e.g. Zara or H&amp;M)" data-price="267.41">
+              <td class="small ps-3">Summer Dress in a Chain Store (e.g. Zara or H&amp;M)</td>
+              <td class="text-end fw-semibold">267.41</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  169.48 – 338.97
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Nike Running Shoes (Mid-Range)" data-price="613.37">
+              <td class="small ps-3">Nike Running Shoes (Mid-Range)</td>
+              <td class="text-end fw-semibold">613.37</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  406.76 – 847.42
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Men&#39;s Leather Business Shoes" data-price="718.61">
+              <td class="small ps-3">Men&#39;s Leather Business Shoes</td>
+              <td class="text-end fw-semibold">718.61</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  406.76 – 1,355.87
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-dark-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-8" aria-expanded="true">
+      <span class="fw-semibold text-dark">
+        <i class="bi bi-house me-2"></i>Rent Per Month
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-8" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="1 Bedroom Apartment in City Centre" data-price="15035.66">
+              <td class="small ps-3">1 Bedroom Apartment in City Centre</td>
+              <td class="text-end fw-semibold">15,035.66</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  10,846.98 – 21,016.03
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="1 Bedroom Apartment Outside of City Centre" data-price="11377.54">
+              <td class="small ps-3">1 Bedroom Apartment Outside of City Centre</td>
+              <td class="text-end fw-semibold">11,377.54</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  9,491.11 – 15,253.57
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="3 Bedroom Apartment in City Centre" data-price="23927.17">
+              <td class="small ps-3">3 Bedroom Apartment in City Centre</td>
+              <td class="text-end fw-semibold">23,927.17</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  20,338.09 – 33,896.82
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="3 Bedroom Apartment Outside of City Centre" data-price="18883.61">
+              <td class="small ps-3">3 Bedroom Apartment Outside of City Centre</td>
+              <td class="text-end fw-semibold">18,883.61</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  14,236.66 – 23,727.77
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-dark-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-9" aria-expanded="true">
+      <span class="fw-semibold text-dark">
+        <i class="bi bi-building me-2"></i>Buy Apartment Price
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-9" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Price per Square Meter to Buy Apartment in City Centre" data-price="97441.74">
+              <td class="small ps-3">Price per Square Meter to Buy Apartment in City Centre</td>
+              <td class="text-end fw-semibold">97,441.74</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  67,793.64 – 183,042.83
+                
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Price per Square Meter to Buy Apartment Outside of Centre" data-price="52181.96">
+              <td class="small ps-3">Price per Square Meter to Buy Apartment Outside of Centre</td>
+              <td class="text-end fw-semibold">52,181.96</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  40,676.18 – 72,972.47
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+  
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-success-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#cat-10" aria-expanded="true">
+      <span class="fw-semibold text-success">
+        <i class="bi bi-cash-stack me-2"></i>Salaries And Financing
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="cat-10" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg (R$)</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            
+            <tr class="market-row" data-name="Average Monthly Net Salary (After Tax)" data-price="24334.03">
+              <td class="small ps-3">Average Monthly Net Salary (After Tax)</td>
+              <td class="text-end fw-semibold">24,334.03</td>
+              <td class="text-end pe-3 text-muted small">
+                —
+              </td>
+            </tr>
+            
+            <tr class="market-row" data-name="Annual Mortgage Interest Rate (20-Year Fixed, in %)" data-price="4.68">
+              <td class="small ps-3">Annual Mortgage Interest Rate (20-Year Fixed, in %)</td>
+              <td class="text-end fw-semibold">4.68</td>
+              <td class="text-end pe-3 text-muted small">
+                
+                  4.00 – 5.96
+                
+              </td>
+            </tr>
+            
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  
+
+  <!-- Video Guides — bottom, 3 columns per category -->
+  
+  
+  
+    
+  
+    
+  
+    
+  
+    
+  
+  
+  <div class="card border-0 shadow-sm mb-4 mt-2">
+    <div class="card-header bg-danger-subtle border-0 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#videoSection" aria-expanded="true">
+      <h6 class="fw-bold mb-0">
+        <i class="bi bi-youtube me-2 text-danger"></i>Video Guides — London
+      </h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="videoSection" class="collapse show">
+      <div class="card-body">
+        
+          
+          <p class="small fw-semibold text-uppercase text-muted mb-2 mt-3">Where to eat in London</p>
+          <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/-BdY_IwN1G0" title="Where to Eat in London: The Ultimate Guide"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="Where to Eat in London: The Ultimate Guide">Where to Eat in London: The Ultimate Guide</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Great Big Story</p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/Oeyp4NCrg6A" title="Must Try London Food Guide | Restaurants, Brunch, Pubs, and More"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="Must Try London Food Guide | Restaurants, Brunch, Pubs, and More">Must Try London Food Guide | Restaurants, Brunch, Pubs, and More</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">the tour guy</p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/s5d7fixs3sU" title="15 INSANELY Good Restaurants in London (on a Budget!)"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="15 INSANELY Good Restaurants in London (on a Budget!)">15 INSANELY Good Restaurants in London (on a Budget!)</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Travels Unfiltered</p>
+            </div>
+            
+          </div>
+          
+        
+          
+          <p class="small fw-semibold text-uppercase text-muted mb-2 mt-3">Places to visit in London</p>
+          <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/iwdCKxz9s7w" title="The 14 Best Things to Do in London (By a Travel Expert) 🇬🇧"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="The 14 Best Things to Do in London (By a Travel Expert) 🇬🇧">The 14 Best Things to Do in London (By a Travel Expert) 🇬🇧</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Destination Well Known</p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/8qsGOMdhY-s" title="The Best Things to See in London in 2025 (Travel Guide)"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="The Best Things to See in London in 2025 (Travel Guide)">The Best Things to See in London in 2025 (Travel Guide)</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">the tour guy</p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/Xpz5m20fpCI" title="17 Tourist Places To Visit in London - Sightseeing in london"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="17 Tourist Places To Visit in London - Sightseeing in london">17 Tourist Places To Visit in London - Sightseeing in london</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">TravelMap</p>
+            </div>
+            
+          </div>
+          
+        
+          
+          <p class="small fw-semibold text-uppercase text-muted mb-2 mt-3">Top attractions in London</p>
+          <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/8qsGOMdhY-s" title="The Best Things to See in London in 2025 (Travel Guide)"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="The Best Things to See in London in 2025 (Travel Guide)">The Best Things to See in London in 2025 (Travel Guide)</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">the tour guy</p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/iwdCKxz9s7w" title="The 14 Best Things to Do in London (By a Travel Expert) 🇬🇧"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="The 14 Best Things to Do in London (By a Travel Expert) 🇬🇧">The 14 Best Things to Do in London (By a Travel Expert) 🇬🇧</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Destination Well Known</p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/3GWpYqfX2Xg" title="TOP 10 Best Places to Visit in LONDON 2024 - Travel Guide"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="TOP 10 Best Places to Visit in LONDON 2024 - Travel Guide">TOP 10 Best Places to Visit in LONDON 2024 - Travel Guide</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Destination Diaries</p>
+            </div>
+            
+          </div>
+          
+        
+          
+          <p class="small fw-semibold text-uppercase text-muted mb-2 mt-3">Cost of Living in London</p>
+          <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/Ncqe7AwzbZA" title="COST OF LIVING IN LONDON UK AS A NIGERIAN | RENT, FEEDING, TRANSPORT, UTILITIES | FOR  SINGLE/COUPLE"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="COST OF LIVING IN LONDON UK AS A NIGERIAN | RENT, FEEDING, TRANSPORT, UTILITIES | FOR  SINGLE/COUPLE">COST OF LIVING IN LONDON UK AS A NIGERIAN | RENT, FEEDING, TRANSPORT, UTILITIES | FOR  SINGLE/COUPLE</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Chi Dominica Nwaka</p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/m3lM5mzTPv8" title="Surviving London for a Year: How Much It Actually Costs..."
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="Surviving London for a Year: How Much It Actually Costs...">Surviving London for a Year: How Much It Actually Costs...</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Life with Dylan </p>
+            </div>
+            
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="https://www.youtube.com/embed/yeO7SZzHiJg" title="Is Living in London Worth It? Real People Share Their Cost of Living"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="Is Living in London Worth It? Real People Share Their Cost of Living">Is Living in London Worth It? Real People Share Their Cost of Living</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">Insight With Ayo</p>
+            </div>
+            
+          </div>
+          
+        
+      </div>
+    </div>
+  </div>
+  
+  
+
+  <!-- Last updated timestamp -->
+  <p class="text-muted text-end small mt-2 mb-4" id="reportFooterDate">
+    Last time updated in source: <strong>02/05/2026</strong>
+  </p>
+
+</div>
+
+
+<!-- Footer -->
+<footer class="footer mt-auto py-4 bg-dark text-light">
+  <div class="container text-center">
+    <p class="mb-1 small text-secondary">
+      Data sourced from <strong class="text-light">Numbeo.com</strong> &mdash; for informational purposes only.
+    </p>
+    <p class="mb-0 small text-secondary">&copy; 2024 Soft Landing &mdash; Built for digital nomads &amp; long-term travelers.</p>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="/static/js/main.js"></script>
+
+<script id="cachedAtMeta" type="application/json">"2026-05-02 21:06:43"</script>
+<script id="reportData" type="application/json">{"categories": {"Buy Apartment Price": [{"name": "Price per Square Meter to Buy Apartment in City Centre", "price": 97441.74, "range_high": 183042.83, "range_low": 67793.64}, {"name": "Price per Square Meter to Buy Apartment Outside of Centre", "price": 52181.96, "range_high": 72972.47, "range_low": 40676.18}], "Childcare": [{"name": "Private Full-Day Preschool or Kindergarten, Monthly Fee per Child", "price": 12429.15, "range_high": 16948.41, "range_low": 8135.24}, {"name": "International Primary School, Annual Tuition per Child", "price": 153191.35, "range_high": 231854.25, "range_low": 101690.46}], "Clothing And Shoes": [{"name": "Jeans (Levi\u0027s 501 or Similar)", "price": 599.44, "range_high": 677.94, "range_low": 338.97}, {"name": "Summer Dress in a Chain Store (e.g. Zara or H\u0026M)", "price": 267.41, "range_high": 338.97, "range_low": 169.48}, {"name": "Nike Running Shoes (Mid-Range)", "price": 613.37, "range_high": 847.42, "range_low": 406.76}, {"name": "Men\u0027s Leather Business Shoes", "price": 718.61, "range_high": 1355.87, "range_low": 406.76}], "Markets": [{"name": "Milk (Regular, 1 Liter)", "price": 9.11, "range_high": 12.81, "range_low": 6.1}, {"name": "Fresh White Bread (500 g Loaf)", "price": 11.12, "range_high": 20.34, "range_low": 5.89}, {"name": "White Rice (1 kg)", "price": 12.21, "range_high": 27.12, "range_low": 8.14}, {"name": "Eggs (12, Large Size)", "price": 25.0, "range_high": 37.96, "range_low": 13.02}, {"name": "Local Cheese (1 kg)", "price": 57.4, "range_high": 135.59, "range_low": 20.34}, {"name": "Chicken Fillets (1 kg)", "price": 49.99, "range_high": 67.79, "range_low": 27.12}, {"name": "Beef Round or Equivalent Back Leg Red Meat (1 kg)", "price": 88.21, "range_high": 149.15, "range_low": 33.9}, {"name": "Apples (1 kg)", "price": 16.3, "range_high": 27.12, "range_low": 6.78}, {"name": "Bananas (1 kg)", "price": 7.84, "range_high": 16.95, "range_low": 6.1}, {"name": "Oranges (1 kg)", "price": 14.54, "range_high": 25.42, "range_low": 6.78}, {"name": "Tomatoes (1 kg)", "price": 15.88, "range_high": 40.68, "range_low": 6.78}, {"name": "Potatoes (1 kg)", "price": 7.72, "range_high": 13.56, "range_low": 4.47}, {"name": "Onions (1 kg)", "price": 8.66, "range_high": 13.56, "range_low": 6.71}, {"name": "Lettuce (1 Head)", "price": 7.62, "range_high": 13.56, "range_low": 5.42}, {"name": "Bottled Water (1.5 Liter)", "price": 8.6, "range_high": 13.56, "range_low": 5.08}, {"name": "Bottle of Wine (Mid-Range)", "price": 67.79, "range_high": 101.69, "range_low": 33.9}, {"name": "Domestic Beer (0.5 Liter Bottle)", "price": 16.87, "range_high": 27.12, "range_low": 10.17}, {"name": "Imported Beer (0.33 Liter Bottle)", "price": 20.39, "range_high": 40.68, "range_low": 10.78}, {"name": "Cigarettes (Pack of 20, Marlboro)", "price": 120.33, "range_high": 135.59, "range_low": 113.89}], "Rent Per Month": [{"name": "1 Bedroom Apartment in City Centre", "price": 15035.66, "range_high": 21016.03, "range_low": 10846.98}, {"name": "1 Bedroom Apartment Outside of City Centre", "price": 11377.54, "range_high": 15253.57, "range_low": 9491.11}, {"name": "3 Bedroom Apartment in City Centre", "price": 23927.17, "range_high": 33896.82, "range_low": 20338.09}, {"name": "3 Bedroom Apartment Outside of City Centre", "price": 18883.61, "range_high": 23727.77, "range_low": 14236.66}], "Restaurants": [{"name": "Meal at an Inexpensive Restaurant", "price": 135.59, "range_high": 271.17, "range_low": 101.69}, {"name": "Meal for Two at a Mid-Range Restaurant (Three Courses, Without Drinks)", "price": 542.35, "range_high": 881.32, "range_low": 406.76}, {"name": "Combo Meal at McDonald\u0027s (or Equivalent Fast-Food Meal)", "price": 61.01, "range_high": 67.79, "range_low": 47.46}, {"name": "Domestic Draft Beer (0.5 Liter)", "price": 47.46, "range_high": 54.23, "range_low": 30.51}, {"name": "Imported Beer (0.33 Liter Bottle)", "price": 40.68, "range_high": 54.23, "range_low": 30.51}, {"name": "Cappuccino (Regular Size)", "price": 27.54, "range_high": 33.9, "range_low": 16.95}, {"name": "Soft Drink (Coca-Cola or Pepsi, 0.33 Liter Bottle)", "price": 15.13, "range_high": 20.34, "range_low": 10.17}, {"name": "Bottled Water (0.33 Liter)", "price": 10.76, "range_high": 16.95, "range_low": 6.78}], "Salaries And Financing": [{"name": "Average Monthly Net Salary (After Tax)", "price": 24334.03, "range_high": null, "range_low": null}, {"name": "Annual Mortgage Interest Rate (20-Year Fixed, in %)", "price": 4.68, "range_high": 5.96, "range_low": 4.0}], "Sports And Leisure": [{"name": "Monthly Fitness Club Membership", "price": 391.51, "range_high": 738.95, "range_low": 196.6}, {"name": "Tennis Court Rental (1 Hour, Weekend)", "price": 130.5, "range_high": 203.38, "range_low": 81.35}, {"name": "Cinema Ticket (International Release)", "price": 101.69, "range_high": 122.03, "range_low": 67.79}], "Transportation": [{"name": "One-Way Ticket (Local Transport)", "price": 21.69, "range_high": 40.68, "range_low": 18.98}, {"name": "Monthly Public Transport Pass (Regular Price)", "price": 1355.87, "range_high": 1694.84, "range_low": 1084.7}, {"name": "Taxi Start (Standard Tariff)", "price": 28.47, "range_high": 40.68, "range_low": 24.41}, {"name": "Taxi 1 km (Standard Tariff)", "price": 16.95, "range_high": 27.12, "range_low": 13.56}, {"name": "Taxi 1 Hour Waiting (Standard Tariff)", "price": 262.16, "range_high": 406.76, "range_low": 135.59}, {"name": "Gasoline (1 Liter)", "price": 9.47, "range_high": 10.85, "range_low": 9.02}, {"name": "Volkswagen Golf 1.5 (or Equivalent New Compact Car)", "price": 195889.73, "range_high": 203380.92, "range_low": 185890.16}, {"name": "Toyota Corolla Sedan 1.6 (or Equivalent New Mid-Size Car)", "price": 206315.97, "range_high": 207753.61, "range_low": 203380.92}], "Utilities (Monthly)": [{"name": "Basic Utilities for 85 m2Apartment (Electricity, Heating, Cooling, Water, Garbage)", "price": 1943.83, "range_high": 3601.54, "range_low": 1118.6}, {"name": "Mobile Phone Plan (Monthly, with Calls and 10GB+ Data)", "price": 84.34, "range_high": 135.59, "range_low": 53.22}, {"name": "Broadband Internet (Unlimited Data, 60 Mbps or Higher)", "price": 213.98, "range_high": 271.17, "range_low": 169.48}]}, "city": "London", "country": "United Kingdom", "currency": "R$", "summary": {"Buy Apartment Price": 74811.85, "Childcare": 82810.25, "Clothing And Shoes": 549.71, "Markets": 29.77, "Rent Per Month": 17305.99, "Restaurants": 110.06, "Salaries And Financing": 12169.35, "Sports And Leisure": 207.9, "Transportation": 50487.54, "Utilities (Monthly)": 747.38}}</script>
+<script id="calcServerData" type="application/json">{"1 Bedroom Apartment Outside of City Centre": 1, "Apples (1 kg)": 1, "Bananas (1 kg)": 1, "Basic Utilities for 85 m2Apartment (Electricity, Heating, Cooling, Water, Garbage)": 1, "Beef Round or Equivalent Back Leg Red Meat (1 kg)": 1, "Bottle of Wine (Mid-Range)": 2, "Bottled Water (0.33 Liter)": 5, "Bottled Water (1.5 Liter)": 26, "Broadband Internet (Unlimited Data, 60 Mbps or Higher)": 1, "Cappuccino (Regular Size)": 10, "Chicken Fillets (1 kg)": 2, "Cigarettes (Pack of 20, Marlboro)": 30, "Cinema Ticket (International Release)": 3, "Combo Meal at McDonald\u0027s (or Equivalent Fast-Food Meal)": 7, "Eggs (12, Large Size)": 2, "Fresh White Bread (500 g Loaf)": 2, "Lettuce (1 Head)": 1, "Local Cheese (1 kg)": 1, "Meal at an Inexpensive Restaurant": 8, "Meal for Two at a Mid-Range Restaurant (Three Courses, Without Drinks)": 3, "Milk (Regular, 1 Liter)": 2, "Mobile Phone Plan (Monthly, with Calls and 10GB+ Data)": 1, "Monthly Fitness Club Membership": 1, "Monthly Public Transport Pass (Regular Price)": 1, "Onions (1 kg)": 1, "Potatoes (1 kg)": 1, "Soft Drink (Coca-Cola or Pepsi, 0.33 Liter Bottle)": 18, "Taxi 1 km (Standard Tariff)": 20, "Tomatoes (1 kg)": 1, "White Rice (1 kg)": 2}</script>
+
+<script>
+/* Live freshness badge — recalculates on every page load so cached HTML stays accurate */
+(function () {
+  var cachedAt = JSON.parse(document.getElementById('cachedAtMeta').textContent || 'null');
+  var badge = document.querySelector('.freshness-badge');
+  if (!badge || !cachedAt) return;
+  var created = new Date(cachedAt.replace(' ', 'T'));
+  var days = Math.floor((Date.now() - created.getTime()) / 86400000);
+  var dd = String(created.getDate()).padStart(2, '0');
+  var mm = String(created.getMonth() + 1).padStart(2, '0');
+  var yyyy = created.getFullYear();
+  var dateStr = dd + '/' + mm + '/' + yyyy;
+  var label, cls, icon;
+  if (days <= 30) {
+    label = 'Fresh data';
+    cls = 'bg-success';
+    icon = 'bi-check-circle-fill';
+  } else if (days <= 90) {
+    label = 'Consider refresh';
+    cls = 'bg-warning text-dark';
+    icon = 'bi-exclamation-triangle-fill';
+  } else {
+    label = 'Old data - refresh recommended';
+    cls = 'bg-danger';
+    icon = 'bi-exclamation-octagon-fill';
+  }
+  badge.className = 'badge freshness-badge ' + cls;
+  badge.innerHTML = '<i class="bi ' + icon + ' me-1"></i>' + label;
+  var footer = document.getElementById('reportFooterDate');
+  if (footer) footer.innerHTML = 'Last time updated in source: <strong>' + dateStr + '</strong>';
+})();
+</script>
+
+<script>
+(function () {
+  const STORAGE_KEY = 'softlanding_calc_v1';
+  const serverCalc = JSON.parse(document.getElementById('calcServerData').textContent || '{}');
+  const calcData = Object.keys(serverCalc).length
+    ? serverCalc
+    : JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  const previewEl = document.getElementById('expensesPreview');
+  if (!previewEl) return;
+
+  if (!Object.keys(calcData).length) {
+    previewEl.innerHTML =
+      '<p class="text-muted small mb-0"><i class="bi bi-info-circle me-2"></i>' +
+      'No calculator data found. <a href="/profile">Set up your Monthly Expenses Calculator</a> to see your estimated costs here.</p>';
+    return;
+  }
+
+  const reportData = JSON.parse(document.getElementById('reportData').textContent);
+  const currency = reportData.currency || '';
+  const cityName = reportData.city || '';
+
+  function normName(s) {
+    return s.replace(/²/g, '2').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
+  const lookup = {};
+  Object.entries(reportData.categories || {}).forEach(function ([cat, items]) {
+    items.forEach(function (item) {
+      var key = normName(item.name);
+      if (item.price && !lookup[key]) {
+        lookup[key] = { price: item.price, category: cat, name: item.name };
+      }
+    });
+  });
+
+  const catMeta = {
+    'Restaurants':          { icon: 'bi-egg-fried',        color: 'danger'    },
+    'Markets':              { icon: 'bi-basket2',           color: 'success'   },
+    'Transportation':       { icon: 'bi-bus-front',         color: 'primary'   },
+    'Utilities (Monthly)':  { icon: 'bi-lightning-charge',  color: 'warning'   },
+    'Sports And Leisure':   { icon: 'bi-bicycle',           color: 'info'      },
+    'Childcare':            { icon: 'bi-people',            color: 'secondary' },
+    'Clothing And Shoes':   { icon: 'bi-bag',               color: 'secondary' },
+    'Rent Per Month':       { icon: 'bi-house',             color: 'dark'      },
+    'Buy Apartment Price':  { icon: 'bi-building',          color: 'dark'      },
+    'Salaries And Financing':{ icon: 'bi-cash-stack',       color: 'success'   },
+  };
+
+  const byCategory = {};
+  let grandTotal = 0;
+  let matched = 0;
+
+  Object.entries(calcData).forEach(function ([name, qty]) {
+    const found = lookup[normName(name)];
+    if (!found) return;
+    matched++;
+    const sub = found.price * qty;
+    grandTotal += sub;
+    if (!byCategory[found.category]) byCategory[found.category] = { items: [], subtotal: 0 };
+    byCategory[found.category].items.push({ name: name, qty: qty, price: found.price, sub: sub });
+    byCategory[found.category].subtotal += sub;
+  });
+
+  if (!matched) {
+    previewEl.innerHTML =
+      '<p class="text-muted small mb-0">None of your calculator items were found in this city\'s data. ' +
+      'Try refreshing the report or adjusting your <a href="/profile">calculator selections</a>.</p>';
+    return;
+  }
+
+  const fmt = function (v) {
+    return currency + ' ' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  let html = '<p class="text-muted small mb-3">Based on your <a href="/profile">Monthly Expenses Calculator</a> selections:</p>';
+
+  Object.entries(byCategory).forEach(function ([cat, group]) {
+    const meta = catMeta[cat] || { icon: 'bi-tag', color: 'secondary' };
+    html += '<div class="mb-3">';
+    html += '<h6 class="fw-semibold small mb-1 text-' + meta.color + '">' +
+            '<i class="bi ' + meta.icon + ' me-1"></i>' + cat + '</h6>';
+    html += '<ul class="list-group list-group-flush mb-1">';
+    group.items.forEach(function (item) {
+      html +=
+        '<li class="list-group-item d-flex justify-content-between align-items-center px-2 py-1 border-0 bg-light rounded mb-1">' +
+        '<span class="small text-muted">' + item.name +
+        ' <span class="badge bg-secondary ms-1">&times;' + item.qty + '</span></span>' +
+        '<span class="small fw-semibold">' + fmt(item.sub) + '</span>' +
+        '</li>';
+    });
+    html += '</ul>';
+    html +=
+      '<div class="d-flex justify-content-between align-items-center px-2 border-top pt-1">' +
+      '<span class="small text-muted">Subtotal</span>' +
+      '<strong class="small">' + fmt(group.subtotal) + '</strong>' +
+      '</div>';
+    html += '</div>';
+  });
+
+  html +=
+    '<div class="alert alert-primary py-2 mb-0 mt-3">' +
+    '<i class="bi bi-calculator me-2"></i>' +
+    '<strong>Total expenses per month: ' + fmt(grandTotal) + '</strong>' +
+    ' in ' + cityName +
+    '</div>';
+
+  previewEl.innerHTML = html;
+})();
+</script>
+
+</body>
+</html>

@@ -17,22 +17,30 @@
       <form action="{{ url_for('search') }}" method="POST" id="searchForm">
         <div class="row justify-content-center">
           <div class="col-md-7 col-lg-5">
-            <div class="input-group input-group-lg shadow">
-              <span class="input-group-text bg-white border-0">
-                <i class="bi bi-geo-alt-fill text-primary"></i>
-              </span>
-              <input
-                type="text"
-                name="city"
-                id="cityInput"
-                class="form-control border-0 fw-semibold"
-                placeholder="Which city are you curious to live in?"
-                autocomplete="off"
-                required
-              >
-              <button class="btn btn-warning fw-bold px-4" type="submit" id="searchBtn">
-                <i class="bi bi-search me-1"></i>Explore
-              </button>
+            <div class="position-relative">
+              <div class="input-group input-group-lg shadow">
+                <span class="input-group-text bg-white border-0">
+                  <i class="bi bi-geo-alt-fill text-primary"></i>
+                </span>
+                <input
+                  type="text"
+                  name="city"
+                  id="cityInput"
+                  class="form-control border-0 fw-semibold"
+                  placeholder="Which city are you curious to live in?"
+                  autocomplete="off"
+                  required
+                >
+                <button class="btn btn-warning fw-bold px-4" type="submit" id="searchBtn">
+                  <i class="bi bi-search me-1"></i>Explore
+                </button>
+              </div>
+              <input type="hidden" name="resolved_slug" id="resolvedSlug">
+              <input type="hidden" name="city_id" id="cityId">
+              <ul id="suggestDropdown"
+                  class="list-group shadow-lg position-absolute w-100 d-none"
+                  style="z-index:1050;top:100%;left:0;border-radius:0 0 .5rem .5rem;overflow:hidden">
+              </ul>
             </div>
             <div class="form-text text-light opacity-50 mt-2 small">
               Try: Barcelona, Lisbon, Chiang Mai, Buenos Aires, Medellín…
@@ -115,5 +123,93 @@
 document.getElementById('searchForm').addEventListener('submit', function () {
   document.getElementById('loadingOverlay').classList.remove('d-none');
 });
+</script>
+
+<script>
+(function () {
+  var input      = document.getElementById('cityInput');
+  var dropdown   = document.getElementById('suggestDropdown');
+  var slugField  = document.getElementById('resolvedSlug');
+  var cityIdField = document.getElementById('cityId');
+  var timer;
+
+  function closeDropdown() {
+    dropdown.classList.add('d-none');
+    dropdown.innerHTML = '';
+  }
+
+  function selectItem(label, slug, cityId) {
+    input.value      = label;
+    slugField.value  = slug;
+    cityIdField.value = cityId || '';
+    closeDropdown();
+  }
+
+  input.addEventListener('input', function () {
+    clearTimeout(timer);
+    slugField.value   = '';
+    cityIdField.value = '';
+    var term = input.value.trim();
+    if (term.length < 2) { closeDropdown(); return; }
+
+    timer = setTimeout(function () {
+      fetch('/api/city-suggest?term=' + encodeURIComponent(term))
+        .then(function (r) { return r.json(); })
+        .then(function (items) {
+          dropdown.innerHTML = '';
+          if (!items.length) { closeDropdown(); return; }
+          items.forEach(function (item, idx) {
+            var li = document.createElement('li');
+            li.className = 'list-group-item list-group-item-action d-flex align-items-center gap-2 py-2 px-3';
+            li.style.cursor = 'pointer';
+            li.dataset.idx  = idx;
+            li.innerHTML =
+              '<i class="bi bi-geo-alt text-primary flex-shrink-0"></i>' +
+              '<span class="small fw-semibold text-start">' + item.label + '</span>';
+            li.addEventListener('mousedown', function (e) {
+              e.preventDefault();
+              selectItem(item.label, item.slug, item.city_id);
+            });
+            dropdown.appendChild(li);
+          });
+          dropdown.classList.remove('d-none');
+        })
+        .catch(closeDropdown);
+    }, 280);
+  });
+
+  input.addEventListener('blur', function () {
+    setTimeout(closeDropdown, 150);
+  });
+
+  input.addEventListener('keydown', function (e) {
+    var items = dropdown.querySelectorAll('li');
+    if (!items.length) return;
+
+    if (e.key === 'Escape') { closeDropdown(); return; }
+
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      var active = dropdown.querySelector('li.active');
+      var idx = -1;
+      items.forEach(function (li, i) { if (li === active) idx = i; });
+      if (active) active.classList.remove('active', 'bg-light');
+      idx = e.key === 'ArrowDown'
+        ? Math.min(idx + 1, items.length - 1)
+        : Math.max(idx - 1, 0);
+      items[idx].classList.add('active', 'bg-light');
+      items[idx].scrollIntoView({ block: 'nearest' });
+    }
+
+    if (e.key === 'Enter') {
+      var active = dropdown.querySelector('li.active');
+      if (active) {
+        e.preventDefault();
+        active.dispatchEvent(new MouseEvent('mousedown'));
+        document.getElementById('searchForm').submit();
+      }
+    }
+  });
+})();
 </script>
 {% endblock %}

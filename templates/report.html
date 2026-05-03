@@ -21,10 +21,12 @@
       <h2 class="fw-bold mb-1">
         <i class="bi bi-geo-alt-fill text-danger me-2"></i>{{ city }}{% if data.country %}<span class="text-muted fs-5 fw-normal">, {{ data.country }}</span>{% endif %}
       </h2>
-      {% if from_cache %}
-        <span class="badge bg-secondary"><i class="bi bi-database me-1"></i>Cached report</span>
+      {% if freshness.level == 'fresh' %}
+        <span class="badge bg-success freshness-badge" data-cached-at="{{ cached_at }}"><i class="bi bi-check-circle-fill me-1"></i>{{ freshness.label }}</span>
+      {% elif freshness.level == 'caution' %}
+        <span class="badge bg-warning text-dark freshness-badge" data-cached-at="{{ cached_at }}"><i class="bi bi-exclamation-triangle-fill me-1"></i>{{ freshness.label }}</span>
       {% else %}
-        <span class="badge bg-success"><i class="bi bi-lightning-fill me-1"></i>Fresh data</span>
+        <span class="badge bg-danger freshness-badge" data-cached-at="{{ cached_at }}"><i class="bi bi-exclamation-octagon-fill me-1"></i>{{ freshness.label }}</span>
       {% endif %}
       <span class="badge bg-dark ms-1">{{ data.currency }}</span>
     </div>
@@ -41,7 +43,6 @@
     </div>
   </div>
 
-
   <!-- Budget vs Local Salary -->
   {% set sal_ns = namespace(salary=0) %}
   {% if 'Salaries And Financing' in data.categories %}
@@ -52,167 +53,211 @@
   {% if profile_budget > 0 and sal_ns.salary > 0 %}
   {% set diff_pct = (((profile_budget - sal_ns.salary) / sal_ns.salary) * 100) | abs | round(1) %}
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-      <h6 class="fw-bold mb-3"><i class="bi bi-wallet2 text-primary me-2"></i>Budget vs Local Salary</h6>
-      {% if profile_budget >= sal_ns.salary %}
-      <div class="alert alert-success py-2 mb-2">
-        <i class="bi bi-arrow-up-circle-fill me-2"></i>
-        Your budget is <strong>{{ diff_pct }}% higher</strong> than the local salary
+    <div class="card-header bg-white border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#budgetSection" aria-expanded="true">
+      <h6 class="fw-bold mb-0"><i class="bi bi-wallet2 text-primary me-2"></i>Budget vs Local Salary</h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="budgetSection" class="collapse show">
+      <div class="card-body">
+        {% if profile_budget >= sal_ns.salary %}
+        <div class="alert alert-success py-2 mb-2">
+          <i class="bi bi-arrow-up-circle-fill me-2"></i>
+          Your budget is <strong>{{ diff_pct }}% higher</strong> than the local salary
+        </div>
+        {% else %}
+        <div class="alert alert-danger py-2 mb-2">
+          <i class="bi bi-arrow-down-circle-fill me-2"></i>
+          Your budget is <strong>{{ diff_pct }}% lower</strong> than the local salary
+        </div>
+        {% endif %}
+        <p class="text-muted small mb-0">
+          Your Budget: <strong>{{ data.currency }} {{ '{:,.2f}'.format(profile_budget) }}</strong>
+          &nbsp;·&nbsp;
+          Local Salary: <strong>{{ data.currency }} {{ '{:,.2f}'.format(sal_ns.salary) }}</strong>
+        </p>
       </div>
-      {% else %}
-      <div class="alert alert-danger py-2 mb-2">
-        <i class="bi bi-arrow-down-circle-fill me-2"></i>
-        Your budget is <strong>{{ diff_pct }}% lower</strong> than the local salary
-      </div>
-      {% endif %}
-      <p class="text-muted small mb-0">
-        Your Budget: <strong>{{ data.currency }} {{ '{:,.2f}'.format(profile_budget) }}</strong>
-        &nbsp;·&nbsp;
-        Local Salary: <strong>{{ data.currency }} {{ '{:,.2f}'.format(sal_ns.salary) }}</strong>
-      </p>
     </div>
   </div>
   {% endif %}
 
-  <div class="d-flex gap-4 align-items-start">
-
-    <!-- Main content -->
-    <div style="flex:1 1 0;min-width:0;">
-
-      {% if data.categories %}
-      {% set cat_meta = {
-        'Restaurants':          ('bi-egg-fried',        'danger'),
-        'Markets':              ('bi-basket2',           'success'),
-        'Transportation':       ('bi-bus-front',         'primary'),
-        'Utilities (Monthly)':  ('bi-lightning-charge',  'warning'),
-        'Sports And Leisure':   ('bi-bicycle',           'info'),
-        'Childcare':            ('bi-people',            'pink'),
-        'Clothing And Shoes':   ('bi-bag',               'secondary'),
-        'Rent Per Month':       ('bi-house',             'dark'),
-        'Buy Apartment Price':  ('bi-building',          'dark'),
-        'Salaries And Financing':('bi-cash-stack',       'success'),
-      } %}
-
-      <h5 class="fw-bold mb-3">
-        <i class="bi bi-table me-2 text-primary"></i>Cost Breakdown
+  <!-- Monthly Expenses Prevision -->
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-info-subtle border-0 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#expensesSection" aria-expanded="true">
+      <h5 class="fw-bold mb-0">
+        <i class="bi bi-calculator me-2 text-info"></i>Monthly Expenses Prevision
       </h5>
-
-      {% for cat, items in data.categories.items() %}
-      {% set meta = cat_meta.get(cat, ('bi-tag', 'secondary')) %}
-      <div class="card border-0 shadow-sm mb-3">
-        <div class="card-header bg-{{ meta[1] }}-subtle border-0 py-2 px-3">
-          <span class="fw-semibold text-{{ meta[1] }}">
-            <i class="bi {{ meta[0] }} me-2"></i>{{ cat }}
-          </span>
-        </div>
-        <div class="table-responsive">
-          <table class="table table-hover table-sm align-middle mb-0">
-            <thead class="table-light">
-              <tr>
-                <th class="ps-3">Item</th>
-                <th class="text-end">Avg ({{ data.currency }})</th>
-                <th class="text-end pe-3 text-muted small">Range</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for item in items %}
-              <tr class="market-row" data-name="{{ item.name }}" data-price="{{ item.price }}">
-                <td class="small ps-3">{{ item.name }}</td>
-                <td class="text-end fw-semibold">{{ '{:,.2f}'.format(item.price) }}</td>
-                <td class="text-end pe-3 text-muted small">
-                  {% if item.range_low and item.range_high %}
-                    {{ '{:,.2f}'.format(item.range_low) }} – {{ '{:,.2f}'.format(item.range_high) }}
-                  {% else %}—{% endif %}
-                </td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {% endfor %}
-      {% endif %}
-
-      <!-- Monthly Expenses Prevision -->
-      <div class="card border-0 shadow-sm mb-4">
-        <div class="card-header bg-info-subtle border-0">
-          <h5 class="fw-bold mb-0">
-            <i class="bi bi-calculator me-2 text-info"></i>Monthly Expenses Prevision
-          </h5>
-        </div>
-        <div class="card-body" id="expensesPreview">
-          <p class="text-muted small mb-0">
-            <span class="spinner-border spinner-border-sm me-2"></span>Calculating…
-          </p>
-        </div>
-      </div>
-
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
     </div>
-
-    <!-- Sidebar: Video Guides -->
-    <div class="flex-shrink-0 d-none d-lg-block" style="width:35%;">
-      <div class="position-sticky" style="top:76px;max-height:calc(100vh - 90px);overflow-y:auto;">
-        <div class="card border-0 shadow-sm">
-          <div class="card-header bg-danger-subtle border-0">
-            <h6 class="fw-bold mb-0">
-              <i class="bi bi-youtube me-2 text-danger"></i>Video Guides — {{ city }}
-            </h6>
-          </div>
-          <div class="card-body p-3">
-            {% if videos %}
-              {% set has_videos = namespace(found=false) %}
-              {% for query, vlist in videos.items() %}
-                {% if vlist %}{% set has_videos.found = true %}{% endif %}
-              {% endfor %}
-              {% if has_videos.found %}
-                {% for query, vlist in videos.items() %}
-                  {% if vlist %}
-                  <p class="small fw-semibold text-uppercase text-muted mb-2 mt-3">{{ query }}</p>
-                  {% for v in vlist %}
-                  <div class="mb-3">
-                    <div class="ratio ratio-16x9 mb-1">
-                      <iframe src="{{ v.embed_url }}" title="{{ v.title }}"
-                              allowfullscreen loading="lazy" class="rounded"></iframe>
-                    </div>
-                    <p class="small fw-semibold mb-0 text-truncate" title="{{ v.title }}">{{ v.title }}</p>
-                    <p class="text-muted mb-0" style="font-size:.7rem">{{ v.channel }}</p>
-                  </div>
-                  {% endfor %}
-                  {% endif %}
-                {% endfor %}
-              {% else %}
-                <p class="text-muted small mb-0">No videos found for this city.</p>
-              {% endif %}
-            {% else %}
-              <p class="text-muted small mb-0">
-                <i class="bi bi-info-circle me-2"></i>
-                Add a <code>YOUTUBE_API_KEY</code> to your <code>.env</code> to enable video guides.
-              </p>
-            {% endif %}
-          </div>
-        </div>
+    <div id="expensesSection" class="collapse show">
+      <div class="card-body" id="expensesPreview">
+        <p class="text-muted small mb-0">
+          <span class="spinner-border spinner-border-sm me-2"></span>Calculating…
+        </p>
       </div>
     </div>
-
   </div>
 
-</div>
+  <!-- Cost Breakdown -->
+  {% if data.categories %}
+  {% set cat_meta = {
+    'Restaurants':          ('bi-egg-fried',        'danger'),
+    'Markets':              ('bi-basket2',           'success'),
+    'Transportation':       ('bi-bus-front',         'primary'),
+    'Utilities (Monthly)':  ('bi-lightning-charge',  'warning'),
+    'Sports And Leisure':   ('bi-bicycle',           'info'),
+    'Childcare':            ('bi-people',            'pink'),
+    'Clothing And Shoes':   ('bi-bag',               'secondary'),
+    'Rent Per Month':       ('bi-house',             'dark'),
+    'Buy Apartment Price':  ('bi-building',          'dark'),
+    'Salaries And Financing':('bi-cash-stack',       'success'),
+  } %}
 
+  <h5 class="fw-bold mb-3">
+    <i class="bi bi-table me-2 text-primary"></i>Cost Breakdown
+  </h5>
+
+  {% for cat, items in data.categories.items() %}
+  {% set meta = cat_meta.get(cat, ('bi-tag', 'secondary')) %}
+  {% set collapse_id = 'cat-' ~ loop.index %}
+  <div class="card border-0 shadow-sm mb-3">
+    <div class="card-header bg-{{ meta[1] }}-subtle border-0 py-2 px-3 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#{{ collapse_id }}" aria-expanded="true">
+      <span class="fw-semibold text-{{ meta[1] }}">
+        <i class="bi {{ meta[0] }} me-2"></i>{{ cat }}
+      </span>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="{{ collapse_id }}" class="collapse show">
+      <div class="table-responsive">
+        <table class="table table-hover table-sm align-middle mb-0">
+          <thead class="table-light">
+            <tr>
+              <th class="ps-3">Item</th>
+              <th class="text-end">Avg ({{ data.currency }})</th>
+              <th class="text-end pe-3 text-muted small">Range</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for item in items %}
+            <tr class="market-row" data-name="{{ item.name }}" data-price="{{ item.price }}">
+              <td class="small ps-3">{{ item.name }}</td>
+              <td class="text-end fw-semibold">{{ '{:,.2f}'.format(item.price) }}</td>
+              <td class="text-end pe-3 text-muted small">
+                {% if item.range_low and item.range_high %}
+                  {{ '{:,.2f}'.format(item.range_low) }} – {{ '{:,.2f}'.format(item.range_high) }}
+                {% else %}—{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+  {% endif %}
+
+  <!-- Video Guides — bottom, 3 columns per category -->
+  {% if videos %}
+  {% set has_videos = namespace(found=false) %}
+  {% for query, vlist in videos.items() %}
+    {% if vlist %}{% set has_videos.found = true %}{% endif %}
+  {% endfor %}
+  {% if has_videos.found %}
+  <div class="card border-0 shadow-sm mb-4 mt-2">
+    <div class="card-header bg-danger-subtle border-0 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#videoSection" aria-expanded="true">
+      <h6 class="fw-bold mb-0">
+        <i class="bi bi-youtube me-2 text-danger"></i>Video Guides — {{ city }}
+      </h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="videoSection" class="collapse show">
+      <div class="card-body">
+        {% for query, vlist in videos.items() %}
+          {% if vlist %}
+          <p class="small fw-semibold text-uppercase text-muted mb-2 mt-3">{{ query }}</p>
+          <div class="row row-cols-1 row-cols-md-3 g-3 mb-3">
+            {% for v in vlist %}
+            <div class="col">
+              <div class="ratio ratio-16x9 mb-1">
+                <iframe src="{{ v.embed_url }}" title="{{ v.title }}"
+                        allowfullscreen loading="lazy" class="rounded"></iframe>
+              </div>
+              <p class="small fw-semibold mb-0 text-truncate" title="{{ v.title }}">{{ v.title }}</p>
+              <p class="text-muted mb-0" style="font-size:.7rem">{{ v.channel }}</p>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+  {% endif %}
+  {% endif %}
+
+  <!-- Last updated timestamp -->
+  <p class="text-muted text-end small mt-2 mb-4" id="reportFooterDate">
+    Last time updated in source: <strong>{{ freshness.date_str }}</strong>
+  </p>
+
+</div>
 {% endblock %}
 
 {% block scripts %}
-<script id="reportData" type="application/json">
-{{ data | tojson }}
+<script id="cachedAtMeta" type="application/json">{{ cached_at | tojson }}</script>
+<script id="reportData" type="application/json">{{ data | tojson }}</script>
+<script id="calcServerData" type="application/json">{{ calculator_data | tojson }}</script>
+
+<script>
+/* Live freshness badge — recalculates on every page load so cached HTML stays accurate */
+(function () {
+  var cachedAt = JSON.parse(document.getElementById('cachedAtMeta').textContent || 'null');
+  var badge = document.querySelector('.freshness-badge');
+  if (!badge || !cachedAt) return;
+  var created = new Date(cachedAt.replace(' ', 'T'));
+  var days = Math.floor((Date.now() - created.getTime()) / 86400000);
+  var dd = String(created.getDate()).padStart(2, '0');
+  var mm = String(created.getMonth() + 1).padStart(2, '0');
+  var yyyy = created.getFullYear();
+  var dateStr = dd + '/' + mm + '/' + yyyy;
+  var label, cls, icon;
+  if (days <= 30) {
+    label = 'Fresh data';
+    cls = 'bg-success';
+    icon = 'bi-check-circle-fill';
+  } else if (days <= 90) {
+    label = 'Consider refresh';
+    cls = 'bg-warning text-dark';
+    icon = 'bi-exclamation-triangle-fill';
+  } else {
+    label = 'Old data - refresh recommended';
+    cls = 'bg-danger';
+    icon = 'bi-exclamation-octagon-fill';
+  }
+  badge.className = 'badge freshness-badge ' + cls;
+  badge.innerHTML = '<i class="bi ' + icon + ' me-1"></i>' + label;
+  var footer = document.getElementById('reportFooterDate');
+  if (footer) footer.innerHTML = 'Last time updated in source: <strong>' + dateStr + '</strong>';
+})();
 </script>
+
 <script>
 (function () {
   const STORAGE_KEY = 'softlanding_calc_v1';
-  const calcData = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+  const serverCalc = JSON.parse(document.getElementById('calcServerData').textContent || '{}');
+  const calcData = Object.keys(serverCalc).length
+    ? serverCalc
+    : JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
   const previewEl = document.getElementById('expensesPreview');
   if (!previewEl) return;
 
   if (!Object.keys(calcData).length) {
-    previewEl.innerHTML = '<p class="text-muted small mb-0"><i class="bi bi-info-circle me-2"></i>' +
+    previewEl.innerHTML =
+      '<p class="text-muted small mb-0"><i class="bi bi-info-circle me-2"></i>' +
       'No calculator data found. <a href="/profile">Set up your Monthly Expenses Calculator</a> to see your estimated costs here.</p>';
     return;
   }
@@ -221,28 +266,52 @@
   const currency = reportData.currency || '';
   const cityName = reportData.city || '';
 
+  function normName(s) {
+    return s.replace(/²/g, '2').replace(/\s+/g, ' ').trim().toLowerCase();
+  }
+
   const lookup = {};
   Object.entries(reportData.categories || {}).forEach(function ([cat, items]) {
     items.forEach(function (item) {
-      if (item.price) lookup[item.name] = { price: item.price, category: cat };
+      var key = normName(item.name);
+      if (item.price && !lookup[key]) {
+        lookup[key] = { price: item.price, category: cat, name: item.name };
+      }
     });
   });
 
-  let restaurantsTotal = 0;
-  let marketsTotal = 0;
+  const catMeta = {
+    'Restaurants':          { icon: 'bi-egg-fried',        color: 'danger'    },
+    'Markets':              { icon: 'bi-basket2',           color: 'success'   },
+    'Transportation':       { icon: 'bi-bus-front',         color: 'primary'   },
+    'Utilities (Monthly)':  { icon: 'bi-lightning-charge',  color: 'warning'   },
+    'Sports And Leisure':   { icon: 'bi-bicycle',           color: 'info'      },
+    'Childcare':            { icon: 'bi-people',            color: 'secondary' },
+    'Clothing And Shoes':   { icon: 'bi-bag',               color: 'secondary' },
+    'Rent Per Month':       { icon: 'bi-house',             color: 'dark'      },
+    'Buy Apartment Price':  { icon: 'bi-building',          color: 'dark'      },
+    'Salaries And Financing':{ icon: 'bi-cash-stack',       color: 'success'   },
+  };
+
+  const byCategory = {};
+  let grandTotal = 0;
   let matched = 0;
 
   Object.entries(calcData).forEach(function ([name, qty]) {
-    const found = lookup[name];
+    const found = lookup[normName(name)];
     if (!found) return;
     matched++;
     const sub = found.price * qty;
-    if (found.category === 'Restaurants') restaurantsTotal += sub;
-    else if (found.category === 'Markets') marketsTotal += sub;
+    grandTotal += sub;
+    if (!byCategory[found.category]) byCategory[found.category] = { items: [], subtotal: 0 };
+    byCategory[found.category].items.push({ name: name, qty: qty, price: found.price, sub: sub });
+    byCategory[found.category].subtotal += sub;
   });
 
   if (!matched) {
-    previewEl.innerHTML = '<p class="text-muted small mb-0">None of your calculator items were found in this city\'s data.</p>';
+    previewEl.innerHTML =
+      '<p class="text-muted small mb-0">None of your calculator items were found in this city\'s data. ' +
+      'Try refreshing the report or adjusting your <a href="/profile">calculator selections</a>.</p>';
     return;
   }
 
@@ -250,23 +319,39 @@
     return currency + ' ' + v.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  const grandTotal = restaurantsTotal + marketsTotal;
-  let rows = '';
-  if (marketsTotal > 0) rows +=
-    '<li class="list-group-item d-flex justify-content-between align-items-center px-0">' +
-    '<span><i class="bi bi-basket2 text-success me-2"></i>Your total expenses with Market</span>' +
-    '<strong>' + fmt(marketsTotal) + '</strong></li>';
-  if (restaurantsTotal > 0) rows +=
-    '<li class="list-group-item d-flex justify-content-between align-items-center px-0">' +
-    '<span><i class="bi bi-egg-fried text-danger me-2"></i>Your total expenses with Restaurants</span>' +
-    '<strong>' + fmt(restaurantsTotal) + '</strong></li>';
+  let html = '<p class="text-muted small mb-3">Based on your <a href="/profile">Monthly Expenses Calculator</a> selections:</p>';
 
-  previewEl.innerHTML =
-    '<p class="text-muted small mb-3">Based on your <a href="/profile">Monthly Expenses Calculator</a>:</p>' +
-    '<ul class="list-group list-group-flush mb-3">' + rows + '</ul>' +
-    '<div class="alert alert-primary py-2 mb-0">' +
+  Object.entries(byCategory).forEach(function ([cat, group]) {
+    const meta = catMeta[cat] || { icon: 'bi-tag', color: 'secondary' };
+    html += '<div class="mb-3">';
+    html += '<h6 class="fw-semibold small mb-1 text-' + meta.color + '">' +
+            '<i class="bi ' + meta.icon + ' me-1"></i>' + cat + '</h6>';
+    html += '<ul class="list-group list-group-flush mb-1">';
+    group.items.forEach(function (item) {
+      html +=
+        '<li class="list-group-item d-flex justify-content-between align-items-center px-2 py-1 border-0 bg-light rounded mb-1">' +
+        '<span class="small text-muted">' + item.name +
+        ' <span class="badge bg-secondary ms-1">&times;' + item.qty + '</span></span>' +
+        '<span class="small fw-semibold">' + fmt(item.sub) + '</span>' +
+        '</li>';
+    });
+    html += '</ul>';
+    html +=
+      '<div class="d-flex justify-content-between align-items-center px-2 border-top pt-1">' +
+      '<span class="small text-muted">Subtotal</span>' +
+      '<strong class="small">' + fmt(group.subtotal) + '</strong>' +
+      '</div>';
+    html += '</div>';
+  });
+
+  html +=
+    '<div class="alert alert-primary py-2 mb-0 mt-3">' +
     '<i class="bi bi-calculator me-2"></i>' +
-    '<strong>Total expenses per month: ' + fmt(grandTotal) + '</strong> in ' + cityName + '</div>';
+    '<strong>Total expenses per month: ' + fmt(grandTotal) + '</strong>' +
+    ' in ' + cityName +
+    '</div>';
+
+  previewEl.innerHTML = html;
 })();
 </script>
 {% endblock %}

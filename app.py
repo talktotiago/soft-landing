@@ -1,4 +1,7 @@
 import os
+import glob
+import hashlib
+from datetime import datetime
 from dotenv import load_dotenv
 load_dotenv()  # Must run before any local imports that read env vars
 
@@ -6,11 +9,56 @@ from flask import (Flask, render_template, request, redirect,
                    url_for, jsonify, flash)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from database import (init_db, save_report, get_report, get_all_reports,
-                      delete_report, save_market_items, get_market_items,
-                      get_profile, save_profile)
-from scraper import scrape_city_data
+from database import (init_db, save_report, get_report, get_report_age,
+                      get_all_reports, delete_report, save_market_items,
+                      get_market_items, get_profile, save_profile,
+                      save_youtube_cache, get_youtube_cache,
+                      save_calculator_data, get_calculator_data)
+from scraper import scrape_city_data, resolve_city_slug, suggest_cities, resolve_true_slug
 from youtube_api import get_city_videos
+
+
+def _norm_name(s):
+    return ' '.join(s.replace('²', '2').split()).lower()
+
+
+def _rank_color(rank, max_rank):
+    """Dark green (rank 1) → amber → dark red (last rank) gradient."""
+    if max_rank <= 1:
+        return '#1b5e20'
+    t = (rank - 1) / (max_rank - 1)
+    if t <= 0.5:
+        t2 = t * 2
+        r = int(27 + t2 * (245 - 27))
+        g = int(94 + t2 * (127 - 94))
+        b = int(32 + t2 * (23 - 32))
+    else:
+        t2 = (t - 0.5) * 2
+        r = int(245 + t2 * (183 - 245))
+        g = int(127 + t2 * (28 - 127))
+        b = int(23 + t2 * (28 - 23))
+    return f'#{r:02x}{g:02x}{b:02x}'
+
+
+def _freshness(created_at_str):
+    """3-tier freshness: 0-30 Fresh, 31-90 Consider refresh, >90 Old."""
+    try:
+        created = datetime.strptime(created_at_str, '%Y-%m-%d %H:%M:%S')
+        days = (datetime.now() - created).days
+        date_str = created.strftime('%d/%m/%Y')
+    except Exception:
+        days = 0
+        date_str = ''
+
+    if days <= 30:
+        return {'level': 'fresh', 'cls': 'success', 'days': days,
+                'label': 'Fresh data', 'date_str': date_str}
+    elif days <= 90:
+        return {'level': 'caution', 'cls': 'warning', 'days': days,
+                'label': 'Consider refresh', 'date_str': date_str}
+    else:
+        return {'level': 'danger', 'cls': 'danger', 'days': days,
+                'label': 'Old data - refresh recommended', 'date_str': date_str}
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'soft-landing-dev-key-change-me')
@@ -51,6 +99,44 @@ CURRENCIES = [
 ]
 
 init_db()
+
+# ── HTML report file cache ─────────────────────────────────────────────────────
+_CACHE_DIR = os.environ.get('CACHE_DIR', os.path.join(os.path.dirname(__file__), 'city_reports'))
+os.makedirs(_CACHE_DIR, exist_ok=True)
+
+
+def _profile_hash(currency, budget):
+    return hashlib.md5(f'{currency}:{budget:.2f}'.encode()).hexdigest()[:8]
+
+
+def _get_html_cache(city_slug, phash):
+    path = os.path.join(_CACHE_DIR, f'{city_slug}_{phash}.html')
+    if os.path.exists(path):
+        with open(path, encoding='utf-8') as f:
+            return f.read()
+    return None
+
+
+def _save_html_cache(city_slug, phash, html):
+    for old in glob.glob(os.path.join(_CACHE_DIR, f'{city_slug}_*.html')):
+        try:
+            os.remove(old)
+        except OSError:
+            pass
+    try:
+        with open(os.path.join(_CACHE_DIR, f'{city_slug}_{phash}.html'), 'w', encoding='utf-8') as f:
+            f.write(html)
+    except OSError:
+        pass
+
+
+def _clear_html_cache(city_slug):
+    for old in glob.glob(os.path.join(_CACHE_DIR, f'{city_slug}_*.html')):
+        try:
+            os.remove(old)
+        except OSError:
+            pass
+
 
 # ── Country name → Unicode flag emoji ─────────────────────────────────────────
 _COUNTRY_ISO = {
@@ -111,8 +197,24 @@ def search():
     if not city:
         flash('Please enter a city name.', 'warning')
         return redirect(url_for('index'))
-    slug = city.replace(' ', '-')
+    city_id = request.form.get('city_id', '').strip()
+    # Best path: use Numbeo's dispatcher with city_id to get the exact page slug
+    if city_id:
+        slug = (resolve_true_slug(city, city_id)
+                or request.form.get('resolved_slug', '').strip()
+                or city.replace(' ', '-'))
+    else:
+        # Manual input fallback: resolve via autocomplete, then simple slugify
+        slug = resolve_city_slug(city) or city.replace(' ', '-')
     return redirect(url_for('report', city=slug))
+
+
+@app.route('/api/city-suggest')
+def api_city_suggest():
+    term = request.args.get('term', '').strip()
+    if len(term) < 2:
+        return jsonify([])
+    return jsonify(suggest_cities(term))
 
 
 @app.route('/report/<path:city>')
@@ -122,17 +224,33 @@ def report(city):
     profile = get_profile()
     profile_currency = profile.get('currency', 'USD')
     profile_budget = float(profile.get('budget', 0) or 0)
+    p_hash = _profile_hash(profile_currency, profile_budget)
 
-    cached = None if refresh else get_report(city_display)
-    # Invalidate cache when currency changed or report predates country detection
-    if cached and (cached.get('currency') != profile_currency or 'country' not in cached):
-        cached = None
-    from_cache = cached is not None
+    if refresh:
+        _clear_html_cache(city)
 
-    if not from_cache:
+    # ── Step 1: serve pre-rendered HTML file if it exists (fastest path) ─────
+    if not refresh:
+        cached_html = _get_html_cache(city, p_hash)
+        if cached_html:
+            return cached_html
+
+    # ── Step 2: no HTML file — check SQLite for city data ────────────────────
+    data = None
+    from_cache = False
+    if not refresh:
+        cached = get_report(city_display)
+        if cached and cached.get('currency') == profile_currency and 'country' in cached:
+            data = cached
+            from_cache = True
+            created_at = get_report_age(city_display) or datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+
+    # ── Step 3: not in SQLite (or refresh) — scrape Numbeo ───────────────────
+    if data is None:
         data = scrape_city_data(city, currency=profile_currency)
         if data:
             save_report(city_display, data)
+            created_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         else:
             flash(
                 f'Could not retrieve data for "{city_display}". '
@@ -140,12 +258,24 @@ def report(city):
                 'danger'
             )
             return redirect(url_for('index'))
+
+    # ── YouTube videos ────────────────────────────────────────────────────────
+    def _has_videos(v):
+        return bool(v) and any(lst for lst in v.values())
+
+    if refresh:
+        videos = get_city_videos(city_display)
+        if _has_videos(videos):
+            save_youtube_cache(city_display, videos)
     else:
-        data = cached
+        videos = get_youtube_cache(city_display)
+        if not _has_videos(videos):
+            videos = get_city_videos(city_display)
+            if _has_videos(videos):
+                save_youtube_cache(city_display, videos)
 
-    videos = get_city_videos(city_display)
-
-    return render_template(
+    # ── Render, cache to HTML file, return ────────────────────────────────────
+    rendered = render_template(
         'report.html',
         city=city_display,
         city_slug=city,
@@ -153,7 +283,12 @@ def report(city):
         videos=videos,
         from_cache=from_cache,
         profile_budget=profile_budget,
+        freshness=_freshness(created_at),
+        cached_at=created_at,
+        calculator_data=get_calculator_data(),
     )
+    _save_html_cache(city, p_hash, rendered)
+    return rendered
 
 
 @app.route('/history')
@@ -243,6 +378,46 @@ def compare():
         if mkt_avgs:
             cheapest_markets_city = min(mkt_avgs, key=mkt_avgs.get)
 
+    # Rank cities by budget/salary ratio (rank 1 = budget goes furthest vs local salary)
+    salary_rank = {}
+    salary_rank_max = 0
+    if budget_total > 0 and city_salaries:
+        ratios = {city: budget_total / sal for city, sal in city_salaries.items() if sal > 0}
+        sorted_by_ratio = sorted(ratios, key=lambda c: ratios[c], reverse=True)
+        salary_rank = {city: i + 1 for i, city in enumerate(sorted_by_ratio)}
+        salary_rank_max = len(salary_rank)
+
+    # Cost projection rankings — mirrors JS calculator logic
+    calc_data_for_rank = get_calculator_data()
+    calc_projection_rank = {}
+    calc_projection_rank_max = 0
+    if calc_data_for_rank and comparison:
+        city_price_lookup = {}
+        for city, city_data in comparison.items():
+            city_price_lookup[city] = {}
+            for cat, items in city_data.get('categories', {}).items():
+                for item in items:
+                    if item.get('price'):
+                        key = _norm_name(item['name'])
+                        if key not in city_price_lookup[city]:
+                            city_price_lookup[city][key] = item['price']
+        city_totals = {city: 0.0 for city in comparison}
+        for calc_name, qty in calc_data_for_rank.items():
+            if not qty:
+                continue
+            key = _norm_name(calc_name)
+            for city in comparison:
+                price = city_price_lookup[city].get(key)
+                if price:
+                    city_totals[city] += price * qty
+        ranked = sorted(
+            [(c, t) for c, t in city_totals.items() if t > 0],
+            key=lambda x: x[1]
+        )
+        if ranked:
+            calc_projection_rank = {city: i + 1 for i, (city, _) in enumerate(ranked)}
+            calc_projection_rank_max = len(calc_projection_rank)
+
     all_reports = get_all_reports()
     return render_template('compare.html',
                            comparison=comparison,
@@ -255,7 +430,12 @@ def compare():
                            cheapest_markets_city=cheapest_markets_city,
                            city_salaries=city_salaries,
                            budget_total=budget_total,
-                           profile_currency=profile_currency)
+                           profile_currency=profile_currency,
+                           salary_rank=salary_rank,
+                           salary_rank_max=salary_rank_max,
+                           calc_projection_rank=calc_projection_rank,
+                           calc_projection_rank_max=calc_projection_rank_max,
+                           calculator_data=get_calculator_data())
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -277,7 +457,8 @@ def profile():
     return render_template('profile.html',
                            profile=get_profile(),
                            currencies=CURRENCIES,
-                           market_items=get_market_items())
+                           market_items=get_market_items(),
+                           calculator_data=get_calculator_data())
 
 
 # ── API endpoints ──────────────────────────────────────────────────────────────
@@ -287,6 +468,18 @@ def api_market():
     items = request.json.get('items', [])
     save_market_items(items)
     return jsonify({'ok': True})
+
+
+@app.route('/api/calculator', methods=['GET', 'POST'])
+def api_calculator():
+    if request.method == 'POST':
+        body = request.json or {}
+        data = body.get('data', {})
+        if not isinstance(data, dict):
+            return jsonify({'ok': False}), 400
+        save_calculator_data(data)
+        return jsonify({'ok': True})
+    return jsonify(get_calculator_data())
 
 
 @app.route('/api/report/<int:report_id>', methods=['DELETE'])
