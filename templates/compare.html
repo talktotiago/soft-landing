@@ -8,21 +8,82 @@
     <h3 class="fw-bold mb-0">
       <i class="bi bi-bar-chart-line me-2 text-primary"></i>City Comparison
     </h3>
-    <a href="{{ url_for('history') }}" class="btn btn-outline-secondary btn-sm">
-      <i class="bi bi-arrow-left me-1"></i>Back to History
-    </a>
+    <div class="d-flex gap-2">
+      {% if comparison %}
+      <a href="{{ url_for('compare_download') }}?{% for c in selected %}city={{ c }}&{% endfor %}"
+         class="btn btn-success btn-sm">
+        <i class="bi bi-file-earmark-excel me-1"></i>Download Excel
+      </a>
+      <button class="btn btn-outline-primary btn-sm" id="saveCompBtn">
+        <i class="bi bi-bookmark-plus me-1"></i>Save Comparison
+      </button>
+      {% endif %}
+      <a href="{{ url_for('history') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Back to History
+      </a>
+    </div>
   </div>
+
+  <!-- Saved Comparisons -->
+  {% if saved_comparisons %}
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#savedCompsSection" aria-expanded="true">
+      <h6 class="fw-bold mb-0"><i class="bi bi-bookmark-fill text-primary me-2"></i>Saved Comparisons</h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="savedCompsSection" class="collapse show">
+      <div class="card-body pt-2 pb-3">
+        <div class="d-flex flex-wrap gap-2" id="savedCompList">
+          {% for sc in saved_comparisons %}
+          <div class="border rounded px-3 py-2 d-flex align-items-center gap-2 saved-comp-item" data-id="{{ sc.id }}"
+               style="background:#f8f9fa">
+            <a href="{{ url_for('compare') }}?{% for c in sc.cities %}city={{ c }}&{% endfor %}"
+               class="text-decoration-none text-dark fw-semibold small">
+              <i class="bi bi-bar-chart-line text-primary me-1"></i>
+              <span class="comp-name">{{ sc.name }}</span>
+            </a>
+            <span class="text-muted small">
+              ({% for c in sc.cities %}{{ c.replace('-', ' ').title() }}{% if not loop.last %}, {% endif %}{% endfor %})
+            </span>
+            <button class="btn btn-link btn-sm p-0 text-secondary comp-edit-btn" title="Rename"
+                    data-id="{{ sc.id }}" data-name="{{ sc.name }}"
+                    data-cities="{{ sc.cities | tojson | e }}">
+              <i class="bi bi-pencil"></i>
+            </button>
+            <button class="btn btn-link btn-sm p-0 text-danger comp-delete-btn" title="Delete"
+                    data-id="{{ sc.id }}">
+              <i class="bi bi-trash"></i>
+            </button>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endif %}
 
   <!-- City selector -->
   <div class="card border-0 shadow-sm mb-4">
-    <div class="card-body">
-      <h6 class="fw-bold mb-3">Select cities to compare</h6>
-      <form method="GET" action="{{ url_for('compare') }}" id="compareForm">
-        <div class="row g-2 align-items-end">
-          <div class="col">
-            <div class="d-flex flex-wrap gap-2">
-              {% for r in all_reports %}
-              <div class="form-check form-check-inline">
+    <div class="card-header bg-white border-0 pt-3 pb-2 d-flex justify-content-between align-items-center"
+         style="cursor:pointer" data-bs-toggle="collapse" data-bs-target="#citySelectorSection" aria-expanded="true">
+      <h6 class="fw-bold mb-0"><i class="bi bi-geo-alt text-primary me-2"></i>Select cities to compare</h6>
+      <i class="bi bi-chevron-down collapse-icon text-muted"></i>
+    </div>
+    <div id="citySelectorSection" class="collapse show">
+      <div class="card-body pt-2">
+        <form method="GET" action="{{ url_for('compare') }}" id="compareForm">
+          {% for continent in continent_order %}
+          {% if continent in grouped_reports %}
+          <div class="mb-3">
+            <div class="d-flex align-items-center mb-1">
+              <span class="badge bg-dark me-2" style="font-size:.7rem;letter-spacing:.04em">{{ continent }}</span>
+            </div>
+            {% for country, reports in grouped_reports[continent].items() %}
+            <div class="d-flex align-items-baseline flex-wrap gap-x-2 mb-1 ps-1">
+              <span class="me-1 flex-shrink-0" style="font-size:1.1rem" title="{{ country }}">{{ country | flag }}</span>
+              {% for r in reports %}
+              <div class="form-check form-check-inline mb-0">
                 <input class="form-check-input" type="checkbox" name="city"
                        value="{{ r.city_name.replace(' ', '-') }}" id="c-{{ r.id }}"
                        {% if r.city_name.replace(' ', '-') in selected %}checked{% endif %}>
@@ -32,14 +93,17 @@
               </div>
               {% endfor %}
             </div>
+            {% endfor %}
           </div>
-          <div class="col-auto">
+          {% endif %}
+          {% endfor %}
+          <div class="d-flex justify-content-end mt-3">
             <button class="btn btn-primary btn-sm" type="submit" id="compareBtn">
               <i class="bi bi-bar-chart-line me-1"></i>Compare
             </button>
           </div>
-        </div>
-      </form>
+        </form>
+      </div>
     </div>
   </div>
 
@@ -285,6 +349,27 @@
   {% endif %}
 
 </div>
+
+<!-- Save Comparison Modal -->
+<div class="modal fade" id="saveCompModal" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content">
+      <div class="modal-header py-2">
+        <h6 class="modal-title fw-bold"><i class="bi bi-bookmark-plus me-2 text-primary"></i>Save Comparison</h6>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body py-3">
+        <input type="text" id="saveCompName" class="form-control form-control-sm"
+               placeholder="Name this comparison…" maxlength="80">
+        <input type="hidden" id="saveCompId">
+      </div>
+      <div class="modal-footer py-2">
+        <button class="btn btn-primary btn-sm" id="saveCompConfirm">Save</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
@@ -550,6 +635,92 @@ document.getElementById('compareForm').addEventListener('submit', function () {
         }
       }
     }
+  });
+})();
+</script>
+<script>
+(function () {
+  var modal = new bootstrap.Modal(document.getElementById('saveCompModal'));
+  var nameInput = document.getElementById('saveCompName');
+  var idInput   = document.getElementById('saveCompId');
+  var confirmBtn = document.getElementById('saveCompConfirm');
+  var saveBtn = document.getElementById('saveCompBtn');
+
+  function selectedCities() {
+    return Array.from(document.querySelectorAll('input[name="city"]:checked'))
+                .map(function (el) { return el.value; });
+  }
+
+  if (saveBtn) {
+    saveBtn.addEventListener('click', function () {
+      idInput.value = '';
+      nameInput.value = '';
+      document.querySelector('#saveCompModal .modal-title').innerHTML =
+        '<i class="bi bi-bookmark-plus me-2 text-primary"></i>Save Comparison';
+      modal.show();
+      setTimeout(function () { nameInput.focus(); }, 300);
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.comp-edit-btn');
+    if (!btn) return;
+    idInput.value   = btn.dataset.id;
+    nameInput.value = btn.dataset.name;
+    document.querySelector('#saveCompModal .modal-title').innerHTML =
+      '<i class="bi bi-pencil me-2 text-primary"></i>Rename Comparison';
+    modal.show();
+    setTimeout(function () { nameInput.select(); }, 300);
+  });
+
+  confirmBtn.addEventListener('click', function () {
+    var name = nameInput.value.trim();
+    if (!name) { nameInput.focus(); return; }
+    var id = idInput.value;
+    if (id) {
+      var existingItem = document.querySelector('.saved-comp-item[data-id="' + id + '"]');
+      var cities = existingItem
+        ? JSON.parse(existingItem.querySelector('.comp-edit-btn').dataset.cities)
+        : selectedCities();
+      fetch('/api/saved-comparisons/' + id, {
+        method: 'PUT',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name, cities: cities})
+      }).then(function () {
+        if (existingItem) {
+          existingItem.querySelector('.comp-name').textContent = name;
+          existingItem.querySelector('.comp-edit-btn').dataset.name = name;
+        }
+        modal.hide();
+      });
+    } else {
+      var cities = selectedCities();
+      fetch('/api/saved-comparisons', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({name: name, cities: cities})
+      }).then(function () { modal.hide(); window.location.reload(); });
+    }
+  });
+
+  nameInput.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter') confirmBtn.click();
+  });
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target.closest('.comp-delete-btn');
+    if (!btn) return;
+    if (!confirm('Delete this saved comparison?')) return;
+    fetch('/api/saved-comparisons/' + btn.dataset.id, {method: 'DELETE'})
+      .then(function () {
+        var item = document.querySelector('.saved-comp-item[data-id="' + btn.dataset.id + '"]');
+        if (item) item.remove();
+        var list = document.getElementById('savedCompList');
+        if (list && !list.querySelector('.saved-comp-item')) {
+          var card = list.closest('.card');
+          if (card) card.remove();
+        }
+      });
   });
 })();
 </script>

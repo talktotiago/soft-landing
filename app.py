@@ -6,14 +6,16 @@ from dotenv import load_dotenv
 load_dotenv()  # Must run before any local imports that read env vars
 
 from flask import (Flask, render_template, request, redirect,
-                   url_for, jsonify, flash)
+                   url_for, jsonify, flash, send_file)
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 from database import (init_db, save_report, get_report, get_report_age,
                       get_all_reports, delete_report, save_market_items,
                       get_market_items, get_profile, save_profile,
                       save_youtube_cache, get_youtube_cache,
-                      save_calculator_data, get_calculator_data)
+                      save_calculator_data, get_calculator_data,
+                      save_comparison, get_all_comparisons,
+                      update_comparison, delete_comparison)
 from scraper import scrape_city_data, resolve_city_slug, suggest_cities, resolve_true_slug
 from youtube_api import get_city_videos
 
@@ -173,6 +175,58 @@ _COUNTRY_ISO = {
     'Venezuela': 'VE', 'Vietnam': 'VN', 'Yemen': 'YE', 'Zambia': 'ZM',
     'Zimbabwe': 'ZW',
 }
+
+
+_COUNTRY_CONTINENT = {
+    # Americas
+    'Argentina': 'Americas', 'Bolivia': 'Americas', 'Brazil': 'Americas',
+    'Canada': 'Americas', 'Chile': 'Americas', 'Colombia': 'Americas',
+    'Costa Rica': 'Americas', 'Cuba': 'Americas', 'Dominican Republic': 'Americas',
+    'Ecuador': 'Americas', 'El Salvador': 'Americas', 'Guatemala': 'Americas',
+    'Honduras': 'Americas', 'Jamaica': 'Americas', 'Mexico': 'Americas',
+    'Nicaragua': 'Americas', 'Panama': 'Americas', 'Paraguay': 'Americas',
+    'Peru': 'Americas', 'United States': 'Americas', 'Uruguay': 'Americas',
+    'Venezuela': 'Americas',
+    # Europe
+    'Albania': 'Europe', 'Austria': 'Europe', 'Belarus': 'Europe',
+    'Belgium': 'Europe', 'Bosnia And Herzegovina': 'Europe', 'Bulgaria': 'Europe',
+    'Croatia': 'Europe', 'Cyprus': 'Europe', 'Czech Republic': 'Europe',
+    'Denmark': 'Europe', 'Estonia': 'Europe', 'Finland': 'Europe',
+    'France': 'Europe', 'Germany': 'Europe', 'Greece': 'Europe',
+    'Hungary': 'Europe', 'Iceland': 'Europe', 'Ireland': 'Europe',
+    'Italy': 'Europe', 'Latvia': 'Europe', 'Lithuania': 'Europe',
+    'Luxembourg': 'Europe', 'Malta': 'Europe', 'Moldova': 'Europe',
+    'Montenegro': 'Europe', 'Netherlands': 'Europe', 'Norway': 'Europe',
+    'Poland': 'Europe', 'Portugal': 'Europe', 'Romania': 'Europe',
+    'Russia': 'Europe', 'Serbia': 'Europe', 'Slovakia': 'Europe',
+    'Slovenia': 'Europe', 'Spain': 'Europe', 'Sweden': 'Europe',
+    'Switzerland': 'Europe', 'Ukraine': 'Europe', 'United Kingdom': 'Europe',
+    # Asia
+    'Afghanistan': 'Asia', 'Armenia': 'Asia', 'Azerbaijan': 'Asia',
+    'Bahrain': 'Asia', 'Bangladesh': 'Asia', 'Cambodia': 'Asia',
+    'China': 'Asia', 'Georgia': 'Asia', 'Hong Kong': 'Asia',
+    'India': 'Asia', 'Indonesia': 'Asia', 'Iran': 'Asia',
+    'Iraq': 'Asia', 'Israel': 'Asia', 'Japan': 'Asia',
+    'Jordan': 'Asia', 'Kazakhstan': 'Asia', 'Kuwait': 'Asia',
+    'Malaysia': 'Asia', 'Mongolia': 'Asia', 'Myanmar': 'Asia',
+    'Nepal': 'Asia', 'Oman': 'Asia', 'Pakistan': 'Asia',
+    'Philippines': 'Asia', 'Qatar': 'Asia', 'Saudi Arabia': 'Asia',
+    'Singapore': 'Asia', 'South Korea': 'Asia', 'Sri Lanka': 'Asia',
+    'Taiwan': 'Asia', 'Thailand': 'Asia', 'Turkey': 'Asia',
+    'United Arab Emirates': 'Asia', 'Uzbekistan': 'Asia', 'Vietnam': 'Asia',
+    'Yemen': 'Asia',
+    # Africa
+    'Algeria': 'Africa', 'Angola': 'Africa', 'Cameroon': 'Africa',
+    'Egypt': 'Africa', 'Ethiopia': 'Africa', 'Ghana': 'Africa',
+    'Kenya': 'Africa', 'Morocco': 'Africa', 'Mozambique': 'Africa',
+    'Nigeria': 'Africa', 'Senegal': 'Africa', 'South Africa': 'Africa',
+    'Sudan': 'Africa', 'Tanzania': 'Africa', 'Tunisia': 'Africa',
+    'Uganda': 'Africa', 'Zambia': 'Africa', 'Zimbabwe': 'Africa',
+    # Oceania
+    'Australia': 'Oceania', 'New Zealand': 'Oceania',
+}
+
+_CONTINENT_ORDER = ['Americas', 'Europe', 'Asia', 'Africa', 'Oceania', 'Other']
 
 
 def _country_flag(country_name):
@@ -419,9 +473,19 @@ def compare():
             calc_projection_rank_max = len(calc_projection_rank)
 
     all_reports = get_all_reports()
+
+    # Group reports by continent → country for the city selector
+    grouped_reports = {}
+    for r in all_reports:
+        cont = _COUNTRY_CONTINENT.get(r.get('country', ''), 'Other')
+        country = r.get('country') or 'Unknown'
+        grouped_reports.setdefault(cont, {}).setdefault(country, []).append(r)
+
     return render_template('compare.html',
                            comparison=comparison,
                            all_reports=all_reports,
+                           grouped_reports=grouped_reports,
+                           continent_order=_CONTINENT_ORDER,
                            selected=cities,
                            affordability_rank=affordability_rank,
                            least_affordable_rank=least_affordable_rank,
@@ -435,7 +499,8 @@ def compare():
                            salary_rank_max=salary_rank_max,
                            calc_projection_rank=calc_projection_rank,
                            calc_projection_rank_max=calc_projection_rank_max,
-                           calculator_data=get_calculator_data())
+                           calculator_data=get_calculator_data(),
+                           saved_comparisons=get_all_comparisons())
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -486,6 +551,160 @@ def api_calculator():
 def api_delete(report_id):
     delete_report(report_id)
     return jsonify({'ok': True})
+
+
+@app.route('/api/saved-comparisons', methods=['GET', 'POST'])
+def api_saved_comparisons():
+    if request.method == 'POST':
+        body = request.json or {}
+        name = body.get('name', '').strip()
+        cities = body.get('cities', [])
+        if not name or not cities:
+            return jsonify({'ok': False}), 400
+        new_id = save_comparison(name, cities)
+        return jsonify({'ok': True, 'id': new_id})
+    return jsonify(get_all_comparisons())
+
+
+@app.route('/api/saved-comparisons/<int:comp_id>', methods=['PUT', 'DELETE'])
+def api_saved_comparison(comp_id):
+    if request.method == 'DELETE':
+        delete_comparison(comp_id)
+        return jsonify({'ok': True})
+    body = request.json or {}
+    name = body.get('name', '').strip()
+    cities = body.get('cities', [])
+    if not name:
+        return jsonify({'ok': False}), 400
+    update_comparison(comp_id, name, cities)
+    return jsonify({'ok': True})
+
+
+@app.route('/compare/download')
+def compare_download():
+    from io import BytesIO
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, PatternFill, Alignment
+    from openpyxl.utils import get_column_letter
+
+    cities = request.args.getlist('city')
+    profile_data = get_profile()
+    profile_currency = profile_data.get('currency', 'USD')
+
+    def _fetch(c):
+        c_display = c.replace('-', ' ').title()
+        d = get_report(c_display)
+        if d and d.get('currency') != profile_currency:
+            d = None
+        if not d:
+            d = scrape_city_data(c, currency=profile_currency)
+        return c_display, d
+
+    comparison = {}
+    with ThreadPoolExecutor(max_workers=6) as executor:
+        futures = {executor.submit(_fetch, c): c for c in cities}
+        for future in as_completed(futures):
+            c_display, d = future.result()
+            if d:
+                comparison[c_display] = d
+
+    if not comparison:
+        flash('No data available to download.', 'warning')
+        return redirect(url_for('compare'))
+
+    city_names = list(comparison.keys())
+    wb = Workbook()
+    header_font = Font(bold=True, color='FFFFFF')
+    header_fill = PatternFill('solid', fgColor='1565C0')
+    green_fill = PatternFill('solid', fgColor='C8E6C9')
+    red_fill = PatternFill('solid', fgColor='FFCDD2')
+
+    def _style_header(ws, row, cols):
+        for col in range(1, cols + 1):
+            cell = ws.cell(row=row, column=col)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal='center', vertical='center')
+
+    # Summary sheet — average price per category per city
+    ws_sum = wb.active
+    ws_sum.title = 'Summary'
+    all_cats = []
+    for d in comparison.values():
+        for cat in d.get('categories', {}):
+            if cat not in all_cats:
+                all_cats.append(cat)
+
+    ws_sum.cell(1, 1, 'Category')
+    for col, city in enumerate(city_names, 2):
+        ws_sum.cell(1, col, city)
+    _style_header(ws_sum, 1, 1 + len(city_names))
+
+    for row, cat in enumerate(all_cats, 2):
+        ws_sum.cell(row, 1, cat)
+        cat_prices = []
+        for col, city in enumerate(city_names, 2):
+            items = comparison[city].get('categories', {}).get(cat, [])
+            prices = [i['price'] for i in items if i.get('price')]
+            avg = round(sum(prices) / len(prices), 2) if prices else None
+            cell = ws_sum.cell(row, col, avg)
+            cell.alignment = Alignment(horizontal='center')
+            if avg is not None:
+                cat_prices.append((col, avg))
+        if len(cat_prices) > 1:
+            min_v = min(v for _, v in cat_prices)
+            max_v = max(v for _, v in cat_prices)
+            for col, v in cat_prices:
+                ws_sum.cell(row, col).fill = green_fill if v == min_v else (red_fill if v == max_v else PatternFill())
+
+    for col in range(1, 2 + len(city_names)):
+        ws_sum.column_dimensions[get_column_letter(col)].width = 22
+
+    # One sheet per category
+    for cat in all_cats:
+        safe_name = cat[:31].replace('/', '-')
+        ws = wb.create_sheet(title=safe_name)
+        ws.cell(1, 1, 'Item')
+        for col, city in enumerate(city_names, 2):
+            ws.cell(1, col, city)
+        _style_header(ws, 1, 1 + len(city_names))
+
+        all_items = []
+        for city in city_names:
+            for item in comparison[city].get('categories', {}).get(cat, []):
+                if item['name'] not in all_items:
+                    all_items.append(item['name'])
+
+        for row, item_name in enumerate(all_items, 2):
+            ws.cell(row, 1, item_name)
+            row_prices = []
+            for col, city in enumerate(city_names, 2):
+                price = next(
+                    (i['price'] for i in comparison[city].get('categories', {}).get(cat, [])
+                     if i['name'] == item_name and i.get('price')),
+                    None
+                )
+                cell = ws.cell(row, col, price)
+                cell.alignment = Alignment(horizontal='center')
+                if price is not None:
+                    row_prices.append((col, price))
+            if len(row_prices) > 1:
+                min_v = min(v for _, v in row_prices)
+                max_v = max(v for _, v in row_prices)
+                for col, v in row_prices:
+                    ws.cell(row, col).fill = green_fill if v == min_v else (red_fill if v == max_v else PatternFill())
+
+        for col in range(1, 2 + len(city_names)):
+            ws.column_dimensions[get_column_letter(col)].width = 22
+
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    filename = 'comparison_' + '_'.join(c.replace(' ', '-') for c in city_names[:3]) + '.xlsx'
+    return send_file(
+        buf, as_attachment=True, download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
 
 
 if __name__ == '__main__':

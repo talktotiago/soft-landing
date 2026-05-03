@@ -1,4 +1,12 @@
 This is a feedback based on ongoing tests of the code delivered by Claude. 
+
+
+New Feedback:
+Compare.html - The checkboxes for cities are all scatered. Divide the cities into category. First by Continent (Americas, Europe, Africa, Asia, Oceania) and then by country (if there's a city in report stored in database). Make the format as <Continent> -> <Country Flag> <City Name 1>. <City Name 2>
+- Also add a button, so users can save their comparisons. (Allow them to Edit and Delete that comparison report)
+- Ability to download the data in Excel file
+
+
 New Feedback:
 The app is working almost as expected, but there's an inconvenience with the search. Sometimes the term used in the app doesn't match with what is sourced in numbeo, breaking the flow and faiing in retrieve the data from numbeo as a source. For that, I found out that you can make requests using 
 _________________________________________________________________________________________________

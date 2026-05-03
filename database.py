@@ -63,6 +63,14 @@ def init_db():
             updated_at TEXT DEFAULT CURRENT_TIMESTAMP
         )
     ''')
+    cursor.execute('''
+        CREATE TABLE IF NOT EXISTS saved_comparisons (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            name       TEXT NOT NULL,
+            cities     TEXT NOT NULL,
+            created_at TEXT DEFAULT CURRENT_TIMESTAMP
+        )
+    ''')
     conn.commit()
     conn.close()
 
@@ -151,10 +159,19 @@ def get_youtube_cache(city_name):
 def get_all_reports(limit=None):
     conn = get_db()
     try:
-        query = 'SELECT id, city_name, created_at FROM city_reports ORDER BY created_at DESC'
+        query = 'SELECT id, city_name, data, created_at FROM city_reports ORDER BY created_at DESC'
         if limit:
             query += f' LIMIT {int(limit)}'
-        return [dict(r) for r in conn.execute(query).fetchall()]
+        rows = conn.execute(query).fetchall()
+        result = []
+        for r in rows:
+            entry = {'id': r['id'], 'city_name': r['city_name'], 'created_at': r['created_at']}
+            try:
+                entry['country'] = json.loads(r['data']).get('country', '')
+            except Exception:
+                entry['country'] = ''
+            result.append(entry)
+        return result
     finally:
         conn.close()
 
@@ -208,5 +225,58 @@ def get_market_items():
     conn = get_db()
     try:
         return [dict(r) for r in conn.execute('SELECT * FROM market_items ORDER BY id').fetchall()]
+    finally:
+        conn.close()
+
+
+def save_comparison(name, cities):
+    conn = get_db()
+    try:
+        cur = conn.execute(
+            'INSERT INTO saved_comparisons (name, cities) VALUES (?, ?)',
+            (name, json.dumps(cities))
+        )
+        conn.commit()
+        return cur.lastrowid
+    finally:
+        conn.close()
+
+
+def get_all_comparisons():
+    conn = get_db()
+    try:
+        rows = conn.execute(
+            'SELECT id, name, cities, created_at FROM saved_comparisons ORDER BY created_at DESC'
+        ).fetchall()
+        result = []
+        for r in rows:
+            entry = dict(r)
+            try:
+                entry['cities'] = json.loads(r['cities'])
+            except Exception:
+                entry['cities'] = []
+            result.append(entry)
+        return result
+    finally:
+        conn.close()
+
+
+def update_comparison(comp_id, name, cities):
+    conn = get_db()
+    try:
+        conn.execute(
+            'UPDATE saved_comparisons SET name = ?, cities = ? WHERE id = ?',
+            (name, json.dumps(cities), comp_id)
+        )
+        conn.commit()
+    finally:
+        conn.close()
+
+
+def delete_comparison(comp_id):
+    conn = get_db()
+    try:
+        conn.execute('DELETE FROM saved_comparisons WHERE id = ?', (comp_id,))
+        conn.commit()
     finally:
         conn.close()
